@@ -2,8 +2,10 @@
 # URL: seabios/README
 cd seabios
 # make menuconfig
-# make -d 2>&1 | tee make_d.log
-# make -n -d 2>&1 | tee make_n_d.log
+# make -n 2>&1 | tee ../make_n.log
+# make -d 2>&1 | tee ../make_d.log
+# make -n -d 2>&1 | tee ../make_n_d.log
+# make -d V=1 2>&1 | tee ../make_d_V.log
 make V=1 2>&1 | tee make_V.log
 ../../qemu/build/qemu-system-x86_64 -bios out/bios.bin
 
