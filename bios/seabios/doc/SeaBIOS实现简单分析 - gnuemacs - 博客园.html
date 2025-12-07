@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="zh-cn" style="--olcb-folder-code-block-max-height: 80vh; --cnb-code-bg: rgb(245, 245, 245); --cnb-code-font-size: 12px; --cnb-code-color: rgb(68, 68, 68);"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="never">
+    
+    <meta name="description" content="SeaBIOS实现简单分析 SeaBIOS是一个16bit的x86 BIOS的开源实现，常用于QEMU等仿真器中使用。本文将结合SeaBIOS Execution and code flow和SeaBIOS的源码对SeaBIOS的全过程进行简单分析。需要注意，本文不是深入的分析，对于一些比较复杂和繁">
+    <meta property="og:description" content="SeaBIOS实现简单分析 SeaBIOS是一个16bit的x86 BIOS的开源实现，常用于QEMU等仿真器中使用。本文将结合SeaBIOS Execution and code flow和SeaBIOS的源码对SeaBIOS的全过程进行简单分析。需要注意，本文不是深入的分析，对于一些比较复杂和繁">
+    <meta property="og:image" content="https://img2020.cnblogs.com/blog/2101132/202101/2101132-20210116200132694-1537545889.png">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>SeaBIOS实现简单分析 - gnuemacs - 博客园</title>
+    <link rel="icon" id="favicon" href="https://assets.cnblogs.com/favicon_v3_2.ico" type="image/x-icon">
+    <link rel="canonical" href="https://www.cnblogs.com/gnuemacs/p/14287120.html">
+    
+    <style>#home :not(.cnblogs_code):not(.cnblogs_Highlighter)>pre:not([highlighted]):not([class*="brush:"]) code:not(.hljs), :not(.cnblogs_code):not(.cnblogs_Highlighter)>pre:not([highlighted]):not([class*="brush:"]) code:not(.hljs) {background: rgb(245, 245, 245);
+        padding: 12px;
+        border: 1px solid rgb(204, 204, 204);
+        border-radius: 3px;
+        border-color: transparent;
+        color: rgb(68, 68, 68);
+        font-family: "Courier New", sans-serif;
+        font-size: 12px</style><link rel="stylesheet" href="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.min.css">
+    
+
+    <link id="MainCss" rel="stylesheet" href="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-blacksun.min.css">
+        <link id="highlighter-theme-cnblogs" type="text/css" rel="stylesheet" href="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/cnblogs.css">
+    
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/bundle-blacksun-mobile.min.css">
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/gnuemacs/rss">
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/gnuemacs/rsd.xml">
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/gnuemacs/wlwmanifest.xml">
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "@id": "https://www.cnblogs.com/gnuemacs/p/14287120.html",
+      "headline": "SeaBIOS实现简单分析",
+      "description": "SeaBIOS实现简单分析 SeaBIOS是一个16bit的x86 BIOS的开源实现，常用于QEMU等仿真器中使用。本文将结合SeaBIOS Execution and code flow和SeaBIOS的源码对SeaBIOS的全过程进行简单分析。需要注意，本文不是深入的分析，对于一些比较复杂和繁",
+      "image": [
+        
+      ],
+      "author": {
+        "@type": "Person",
+        "@id": "https://www.cnblogs.com/gnuemacs/",
+        "name": "gnuemacs",
+        "url": "https://www.cnblogs.com/gnuemacs/"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "@id": "https://www.cnblogs.com/",
+        "name": "博客园",
+        "url": "https://www.cnblogs.com/"
+      },
+      "datePublished": "2021-01-16T20:02:00.0000000&#x2B;08:00",
+      "dateModified": "2021-01-16T20:11:00.0000000&#x2B;08:00",
+      "wordCount": "23187",
+      "isPartOf": {
+        "@type": "Blog",
+        "@id": "https://www.cnblogs.com/gnuemacs/",
+        "name": "gnuemacs",
+        "publisher": {
+          "@type": "Organization",
+          "@id": "https://www.cnblogs.com/",
+          "name": "博客园"
+        }
+      }
+    }
+    </script>
+
+    <script>
+        var currentBlogId = 617500;
+        var currentBlogApp = 'gnuemacs';
+        var isLogined = false;
+        var isBlogOwner = false;
+        var skinName = 'BlackSun';
+        var visitorUserId = '';
+        window.hasCustomScript = false;
+        window.cb_enable_mathjax = true;
+        window.mathEngine = 0;
+        window.codeHighlightEngine = 1;
+        window.enableCodeLineNumber = false;
+        window.codeHighlightTheme = 'cnblogs';
+        window.darkModeCodeHighlightTheme = 'vs2015';
+        window.isDarkCodeHighlightTheme = false;
+        window.isDarkModeCodeHighlightThemeDark = true;
+        window.isDisableCodeHighlighter = false;
+        window.enableCodeThemeTypeFollowSystem = false;
+        window.enableMacStyleCodeBlock = false;
+
+    </script>
+        <script>
+            window.currentPostId = 14287120;
+            window.currentPostDateAdded = '2021-01-16 20:02';
+        </script>
+    <script src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/jquery-3.3.1.min.js"></script>
+    <script src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/blog-common.min.js"></script><style>.medium-zoom-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 300ms;
+  will-change: opacity;
+}
+
+.medium-zoom--opened .medium-zoom-overlay {
+  cursor: pointer;
+  cursor: zoom-out;
+  opacity: 1;
+}
+
+.medium-zoom-image {
+  cursor: pointer;
+  cursor: zoom-in;
+  /*
+    The `transition` is marked as "!important" for the animation to happen
+    even though it's overriden by another inline `transition` style attribute.
+
+    This is problematic with frameworks that generate inline styles on their
+    images (e.g. Gatsby).
+
+    See https://github.com/francoischalifour/medium-zoom/issues/110
+   */
+  transition: transform 300ms cubic-bezier(0.2, 0, 0.2, 1) !important;
+}
+
+.medium-zoom-image--hidden {
+  visibility: hidden;
+}
+
+.medium-zoom-image--opened {
+  position: relative;
+  cursor: pointer;
+  cursor: zoom-out;
+  will-change: transform;
+}
+</style><script id="hljs-script" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/highlight.min.js" type="text/javascript" async=""></script>
+    
+<script id="mathjax" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/MathJax.js" type="text/javascript" async=""></script><style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Menu_Button .MathJax_Hover_Arrow {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px; font-family: 'Courier New',Courier; font-size: 9px; color: #F0F0F0}
+.MathJax_Menu_Button .MathJax_Hover_Arrow span {display: block; background-color: #AAA; border: 1px solid; border-radius: 3px; line-height: 0; padding: 4px}
+.MathJax_Hover_Arrow:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_Hover_Arrow:hover span {background-color: #CCC!important}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_About.MathJax_MousePost {outline: none}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 5px 0px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 5px; -webkit-border-radius: 5px; -moz-border-radius: 5px; -khtml-border-radius: 5px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 1px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; padding-top: .25em; color: #666666; font-size: .75em}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuArrow.RTL {left: .5em; right: auto}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuRadioCheck {position: absolute; left: .7em}
+.MathJax_MenuRadioCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuLabel {padding: 1px 2em 3px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #DDDDDD; margin: 4px 3px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: #606872; color: white}
+.MathJax_MenuDisabled:focus, .MathJax_MenuLabel:focus {background-color: #E8E8E8}
+.MathJax_ContextMenu:focus {outline: none}
+.MathJax_ContextMenu .MathJax_MenuItem:focus {outline: none}
+#MathJax_AboutClose {top: .2em; right: .2em}
+.MathJax_Menu .MathJax_MenuClose {top: -10px; left: -10px}
+.MathJax_MenuClose {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; font-family: 'Courier New',Courier; font-size: 24px; color: #F0F0F0}
+.MathJax_MenuClose span {display: block; background-color: #AAA; border: 1.5px solid; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; line-height: 0; padding: 8px 0 6px}
+.MathJax_MenuClose:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_MenuClose:hover span {background-color: #CCC!important}
+.MathJax_MenuClose:hover:focus {outline: none}
+</style><style type="text/css">.MathJax_Preview .MJXf-math {color: inherit!important}
+</style><style type="text/css">.MJX_Assistive_MathML {position: absolute!important; top: 0; left: 0; clip: rect(1px, 1px, 1px, 1px); padding: 1px 0 0 0!important; border: 0!important; height: 1px!important; width: 1px!important; overflow: hidden!important; display: block!important; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none}
+.MJX_Assistive_MathML.MJX_Assistive_MathML_Block {width: 100%!important}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1px; bottom: 2px; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><style type="text/css">.MJXp-script {font-size: .8em}
+.MJXp-right {-webkit-transform-origin: right; -moz-transform-origin: right; -ms-transform-origin: right; -o-transform-origin: right; transform-origin: right}
+.MJXp-bold {font-weight: bold}
+.MJXp-italic {font-style: italic}
+.MJXp-scr {font-family: MathJax_Script,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-frak {font-family: MathJax_Fraktur,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-sf {font-family: MathJax_SansSerif,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-cal {font-family: MathJax_Caligraphic,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-mono {font-family: MathJax_Typewriter,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-largeop {font-size: 150%}
+.MJXp-largeop.MJXp-int {vertical-align: -.2em}
+.MJXp-math {display: inline-block; line-height: 1.2; text-indent: 0; font-family: 'Times New Roman',Times,STIXGeneral,serif; white-space: nowrap; border-collapse: collapse}
+.MJXp-display {display: block; text-align: center; margin: 1em 0}
+.MJXp-math span {display: inline-block}
+.MJXp-box {display: block!important; text-align: center}
+.MJXp-box:after {content: " "}
+.MJXp-rule {display: block!important; margin-top: .1em}
+.MJXp-char {display: block!important}
+.MJXp-mo {margin: 0 .15em}
+.MJXp-mfrac {margin: 0 .125em; vertical-align: .25em}
+.MJXp-denom {display: inline-table!important; width: 100%}
+.MJXp-denom > * {display: table-row!important}
+.MJXp-surd {vertical-align: top}
+.MJXp-surd > * {display: block!important}
+.MJXp-script-box > *  {display: table!important; height: 50%}
+.MJXp-script-box > * > * {display: table-cell!important; vertical-align: top}
+.MJXp-script-box > *:last-child > * {vertical-align: bottom}
+.MJXp-script-box > * > * > * {display: block!important}
+.MJXp-mphantom {visibility: hidden}
+.MJXp-munderover, .MJXp-munder {display: inline-table!important}
+.MJXp-over {display: inline-block!important; text-align: center}
+.MJXp-over > * {display: block!important}
+.MJXp-munderover > *, .MJXp-munder > * {display: table-row!important}
+.MJXp-mtable {vertical-align: .25em; margin: 0 .125em}
+.MJXp-mtable > * {display: inline-table!important; vertical-align: middle}
+.MJXp-mtr {display: table-row!important}
+.MJXp-mtd {display: table-cell!important; text-align: center; padding: .5em 0 0 .5em}
+.MJXp-mtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-mlabeledtr {display: table-row!important}
+.MJXp-mlabeledtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mlabeledtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MJXp-scale0 {-webkit-transform: scaleX(.0); -moz-transform: scaleX(.0); -ms-transform: scaleX(.0); -o-transform: scaleX(.0); transform: scaleX(.0)}
+.MJXp-scale1 {-webkit-transform: scaleX(.1); -moz-transform: scaleX(.1); -ms-transform: scaleX(.1); -o-transform: scaleX(.1); transform: scaleX(.1)}
+.MJXp-scale2 {-webkit-transform: scaleX(.2); -moz-transform: scaleX(.2); -ms-transform: scaleX(.2); -o-transform: scaleX(.2); transform: scaleX(.2)}
+.MJXp-scale3 {-webkit-transform: scaleX(.3); -moz-transform: scaleX(.3); -ms-transform: scaleX(.3); -o-transform: scaleX(.3); transform: scaleX(.3)}
+.MJXp-scale4 {-webkit-transform: scaleX(.4); -moz-transform: scaleX(.4); -ms-transform: scaleX(.4); -o-transform: scaleX(.4); transform: scaleX(.4)}
+.MJXp-scale5 {-webkit-transform: scaleX(.5); -moz-transform: scaleX(.5); -ms-transform: scaleX(.5); -o-transform: scaleX(.5); transform: scaleX(.5)}
+.MJXp-scale6 {-webkit-transform: scaleX(.6); -moz-transform: scaleX(.6); -ms-transform: scaleX(.6); -o-transform: scaleX(.6); transform: scaleX(.6)}
+.MJXp-scale7 {-webkit-transform: scaleX(.7); -moz-transform: scaleX(.7); -ms-transform: scaleX(.7); -o-transform: scaleX(.7); transform: scaleX(.7)}
+.MJXp-scale8 {-webkit-transform: scaleX(.8); -moz-transform: scaleX(.8); -ms-transform: scaleX(.8); -o-transform: scaleX(.8); transform: scaleX(.8)}
+.MJXp-scale9 {-webkit-transform: scaleX(.9); -moz-transform: scaleX(.9); -ms-transform: scaleX(.9); -o-transform: scaleX(.9); transform: scaleX(.9)}
+.MathJax_PHTML .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style><style type="text/css">.mjx-chtml {display: inline-block; line-height: 0; text-indent: 0; text-align: left; text-transform: none; font-style: normal; font-weight: normal; font-size: 100%; font-size-adjust: none; letter-spacing: normal; word-wrap: normal; word-spacing: normal; white-space: nowrap; float: none; direction: ltr; max-width: none; max-height: none; min-width: 0; min-height: 0; border: 0; margin: 0; padding: 1px 0}
+.MJXc-display {display: block; text-align: center; margin: 1em 0; padding: 0}
+.mjx-chtml[tabindex]:focus, body :focus .mjx-chtml[tabindex] {display: inline-table}
+.mjx-full-width {text-align: center; display: table-cell!important; width: 10000em}
+.mjx-math {display: inline-block; border-collapse: separate; border-spacing: 0}
+.mjx-math * {display: inline-block; -webkit-box-sizing: content-box!important; -moz-box-sizing: content-box!important; box-sizing: content-box!important; text-align: left}
+.mjx-numerator {display: block; text-align: center}
+.mjx-denominator {display: block; text-align: center}
+.MJXc-stacked {height: 0; position: relative}
+.MJXc-stacked > * {position: absolute}
+.MJXc-bevelled > * {display: inline-block}
+.mjx-stack {display: inline-block}
+.mjx-op {display: block}
+.mjx-under {display: table-cell}
+.mjx-over {display: block}
+.mjx-over > * {padding-left: 0px!important; padding-right: 0px!important}
+.mjx-under > * {padding-left: 0px!important; padding-right: 0px!important}
+.mjx-stack > .mjx-sup {display: block}
+.mjx-stack > .mjx-sub {display: block}
+.mjx-prestack > .mjx-presup {display: block}
+.mjx-prestack > .mjx-presub {display: block}
+.mjx-delim-h > .mjx-char {display: inline-block}
+.mjx-surd {vertical-align: top}
+.mjx-mphantom * {visibility: hidden}
+.mjx-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 2px 3px; font-style: normal; font-size: 90%}
+.mjx-annotation-xml {line-height: normal}
+.mjx-menclose > svg {fill: none; stroke: currentColor}
+.mjx-mtr {display: table-row}
+.mjx-mlabeledtr {display: table-row}
+.mjx-mtd {display: table-cell; text-align: center}
+.mjx-label {display: table-row}
+.mjx-box {display: inline-block}
+.mjx-block {display: block}
+.mjx-span {display: inline}
+.mjx-char {display: block; white-space: pre}
+.mjx-itable {display: inline-table; width: auto}
+.mjx-row {display: table-row}
+.mjx-cell {display: table-cell}
+.mjx-table {display: table; width: 100%}
+.mjx-line {display: block; height: 0}
+.mjx-strut {width: 0; padding-top: 1em}
+.mjx-vsize {width: 0}
+.MJXc-space1 {margin-left: .167em}
+.MJXc-space2 {margin-left: .222em}
+.MJXc-space3 {margin-left: .278em}
+.mjx-chartest {display: block; visibility: hidden; position: absolute; top: 0; line-height: normal; font-size: 500%}
+.mjx-chartest .mjx-char {display: inline}
+.mjx-chartest .mjx-box {padding-top: 1000px}
+.MJXc-processing {visibility: hidden; position: fixed; width: 0; height: 0; overflow: hidden}
+.MJXc-processed {display: none}
+.mjx-test {font-style: normal; font-weight: normal; font-size: 100%; font-size-adjust: none; text-indent: 0; text-transform: none; letter-spacing: normal; word-spacing: normal; overflow: hidden; height: 1px}
+.mjx-test.mjx-test-display {display: table!important}
+.mjx-test.mjx-test-inline {display: inline!important; margin-right: -1px}
+.mjx-test.mjx-test-default {display: block!important; clear: both}
+.mjx-ex-box {display: inline-block!important; position: absolute; overflow: hidden; min-height: 0; max-height: none; padding: 0; border: 0; margin: 0; width: 1px; height: 60ex}
+.mjx-test-inline .mjx-left-box {display: inline-block; width: 0; float: left}
+.mjx-test-inline .mjx-right-box {display: inline-block; width: 0; float: right}
+.mjx-test-display .mjx-right-box {display: table-cell!important; width: 10000em!important; min-width: 0; max-width: none; padding: 0; border: 0; margin: 0}
+#MathJax_CHTML_Tooltip {background-color: InfoBackground; color: InfoText; border: 1px solid black; box-shadow: 2px 2px 5px #AAAAAA; -webkit-box-shadow: 2px 2px 5px #AAAAAA; -moz-box-shadow: 2px 2px 5px #AAAAAA; -khtml-box-shadow: 2px 2px 5px #AAAAAA; padding: 3px 4px; z-index: 401; position: absolute; left: 0; top: 0; width: auto; height: auto; display: none}
+.mjx-chtml .mjx-noError {line-height: 1.2; vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+.MJXc-TeX-unknown-R {font-family: STIXGeneral,'Cambria Math','Arial Unicode MS',serif; font-style: normal; font-weight: normal}
+.MJXc-TeX-unknown-I {font-family: STIXGeneral,'Cambria Math','Arial Unicode MS',serif; font-style: italic; font-weight: normal}
+.MJXc-TeX-unknown-B {font-family: STIXGeneral,'Cambria Math','Arial Unicode MS',serif; font-style: normal; font-weight: bold}
+.MJXc-TeX-unknown-BI {font-family: STIXGeneral,'Cambria Math','Arial Unicode MS',serif; font-style: italic; font-weight: bold}
+.MJXc-TeX-ams-R {font-family: MJXc-TeX-ams-R,MJXc-TeX-ams-Rw}
+.MJXc-TeX-cal-B {font-family: MJXc-TeX-cal-B,MJXc-TeX-cal-Bx,MJXc-TeX-cal-Bw}
+.MJXc-TeX-frak-R {font-family: MJXc-TeX-frak-R,MJXc-TeX-frak-Rw}
+.MJXc-TeX-frak-B {font-family: MJXc-TeX-frak-B,MJXc-TeX-frak-Bx,MJXc-TeX-frak-Bw}
+.MJXc-TeX-math-BI {font-family: MJXc-TeX-math-BI,MJXc-TeX-math-BIx,MJXc-TeX-math-BIw}
+.MJXc-TeX-sans-R {font-family: MJXc-TeX-sans-R,MJXc-TeX-sans-Rw}
+.MJXc-TeX-sans-B {font-family: MJXc-TeX-sans-B,MJXc-TeX-sans-Bx,MJXc-TeX-sans-Bw}
+.MJXc-TeX-sans-I {font-family: MJXc-TeX-sans-I,MJXc-TeX-sans-Ix,MJXc-TeX-sans-Iw}
+.MJXc-TeX-script-R {font-family: MJXc-TeX-script-R,MJXc-TeX-script-Rw}
+.MJXc-TeX-type-R {font-family: MJXc-TeX-type-R,MJXc-TeX-type-Rw}
+.MJXc-TeX-cal-R {font-family: MJXc-TeX-cal-R,MJXc-TeX-cal-Rw}
+.MJXc-TeX-main-B {font-family: MJXc-TeX-main-B,MJXc-TeX-main-Bx,MJXc-TeX-main-Bw}
+.MJXc-TeX-main-I {font-family: MJXc-TeX-main-I,MJXc-TeX-main-Ix,MJXc-TeX-main-Iw}
+.MJXc-TeX-main-R {font-family: MJXc-TeX-main-R,MJXc-TeX-main-Rw}
+.MJXc-TeX-math-I {font-family: MJXc-TeX-math-I,MJXc-TeX-math-Ix,MJXc-TeX-math-Iw}
+.MJXc-TeX-size1-R {font-family: MJXc-TeX-size1-R,MJXc-TeX-size1-Rw}
+.MJXc-TeX-size2-R {font-family: MJXc-TeX-size2-R,MJXc-TeX-size2-Rw}
+.MJXc-TeX-size3-R {font-family: MJXc-TeX-size3-R,MJXc-TeX-size3-Rw}
+.MJXc-TeX-size4-R {font-family: MJXc-TeX-size4-R,MJXc-TeX-size4-Rw}
+.MJXc-TeX-vec-R {font-family: MJXc-TeX-vec-R,MJXc-TeX-vec-Rw}
+.MJXc-TeX-vec-B {font-family: MJXc-TeX-vec-B,MJXc-TeX-vec-Bx,MJXc-TeX-vec-Bw}
+@font-face {font-family: MJXc-TeX-ams-R; src: local('MathJax_AMS'), local('MathJax_AMS-Regular')}
+@font-face {font-family: MJXc-TeX-ams-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_AMS-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_AMS-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_AMS-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-cal-B; src: local('MathJax_Caligraphic Bold'), local('MathJax_Caligraphic-Bold')}
+@font-face {font-family: MJXc-TeX-cal-Bx; src: local('MathJax_Caligraphic'); font-weight: bold}
+@font-face {font-family: MJXc-TeX-cal-Bw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Caligraphic-Bold.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Bold.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Caligraphic-Bold.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-frak-R; src: local('MathJax_Fraktur'), local('MathJax_Fraktur-Regular')}
+@font-face {font-family: MJXc-TeX-frak-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Fraktur-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Fraktur-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Fraktur-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-frak-B; src: local('MathJax_Fraktur Bold'), local('MathJax_Fraktur-Bold')}
+@font-face {font-family: MJXc-TeX-frak-Bx; src: local('MathJax_Fraktur'); font-weight: bold}
+@font-face {font-family: MJXc-TeX-frak-Bw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Fraktur-Bold.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Fraktur-Bold.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Fraktur-Bold.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-math-BI; src: local('MathJax_Math BoldItalic'), local('MathJax_Math-BoldItalic')}
+@font-face {font-family: MJXc-TeX-math-BIx; src: local('MathJax_Math'); font-weight: bold; font-style: italic}
+@font-face {font-family: MJXc-TeX-math-BIw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Math-BoldItalic.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Math-BoldItalic.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Math-BoldItalic.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-sans-R; src: local('MathJax_SansSerif'), local('MathJax_SansSerif-Regular')}
+@font-face {font-family: MJXc-TeX-sans-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_SansSerif-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_SansSerif-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_SansSerif-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-sans-B; src: local('MathJax_SansSerif Bold'), local('MathJax_SansSerif-Bold')}
+@font-face {font-family: MJXc-TeX-sans-Bx; src: local('MathJax_SansSerif'); font-weight: bold}
+@font-face {font-family: MJXc-TeX-sans-Bw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_SansSerif-Bold.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_SansSerif-Bold.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_SansSerif-Bold.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-sans-I; src: local('MathJax_SansSerif Italic'), local('MathJax_SansSerif-Italic')}
+@font-face {font-family: MJXc-TeX-sans-Ix; src: local('MathJax_SansSerif'); font-style: italic}
+@font-face {font-family: MJXc-TeX-sans-Iw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_SansSerif-Italic.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_SansSerif-Italic.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_SansSerif-Italic.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-script-R; src: local('MathJax_Script'), local('MathJax_Script-Regular')}
+@font-face {font-family: MJXc-TeX-script-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Script-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Script-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Script-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-type-R; src: local('MathJax_Typewriter'), local('MathJax_Typewriter-Regular')}
+@font-face {font-family: MJXc-TeX-type-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Typewriter-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Typewriter-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Typewriter-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-cal-R; src: local('MathJax_Caligraphic'), local('MathJax_Caligraphic-Regular')}
+@font-face {font-family: MJXc-TeX-cal-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Caligraphic-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Caligraphic-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-main-B; src: local('MathJax_Main Bold'), local('MathJax_Main-Bold')}
+@font-face {font-family: MJXc-TeX-main-Bx; src: local('MathJax_Main'); font-weight: bold}
+@font-face {font-family: MJXc-TeX-main-Bw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Main-Bold.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Main-Bold.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Main-Bold.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-main-I; src: local('MathJax_Main Italic'), local('MathJax_Main-Italic')}
+@font-face {font-family: MJXc-TeX-main-Ix; src: local('MathJax_Main'); font-style: italic}
+@font-face {font-family: MJXc-TeX-main-Iw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Main-Italic.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Main-Italic.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Main-Italic.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-main-R; src: local('MathJax_Main'), local('MathJax_Main-Regular')}
+@font-face {font-family: MJXc-TeX-main-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Main-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Main-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-math-I; src: local('MathJax_Math Italic'), local('MathJax_Math-Italic')}
+@font-face {font-family: MJXc-TeX-math-Ix; src: local('MathJax_Math'); font-style: italic}
+@font-face {font-family: MJXc-TeX-math-Iw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Math-Italic.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Math-Italic.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-size1-R; src: local('MathJax_Size1'), local('MathJax_Size1-Regular')}
+@font-face {font-family: MJXc-TeX-size1-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Size1-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Size1-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Size1-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-size2-R; src: local('MathJax_Size2'), local('MathJax_Size2-Regular')}
+@font-face {font-family: MJXc-TeX-size2-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Size2-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Size2-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Size2-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-size3-R; src: local('MathJax_Size3'), local('MathJax_Size3-Regular')}
+@font-face {font-family: MJXc-TeX-size3-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Size3-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Size3-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Size3-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-size4-R; src: local('MathJax_Size4'), local('MathJax_Size4-Regular')}
+@font-face {font-family: MJXc-TeX-size4-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Size4-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Size4-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Size4-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-vec-R; src: local('MathJax_Vector'), local('MathJax_Vector-Regular')}
+@font-face {font-family: MJXc-TeX-vec-Rw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Vector-Regular.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Vector-Regular.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Vector-Regular.otf') format('opentype')}
+@font-face {font-family: MJXc-TeX-vec-B; src: local('MathJax_Vector Bold'), local('MathJax_Vector-Bold')}
+@font-face {font-family: MJXc-TeX-vec-Bx; src: local('MathJax_Vector'); font-weight: bold}
+@font-face {font-family: MJXc-TeX-vec-Bw; src /*1*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/eot/MathJax_Vector-Bold.eot'); src /*2*/: url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/woff/MathJax_Vector-Bold.woff') format('woff'), url('https://mathjax.cnblogs.com/2_7_5/fonts/HTML-CSS/TeX/otf/MathJax_Vector-Bold.otf') format('opentype')}
+</style></head>
+<body class="skin-blacksun has-navbar mathjax2 has-bannerbar hljs-engine"><div id="MathJax_Message" style="display: none;"></div>
+    <a name="top"></a>
+            <a href="https://www.juhe.cn/activity/detail/dataset?s=dataset-cnblog" onclick="countCreativeClicks('C0-聚合数据')" target="_blank" rel="nofollow">
+                <div class="imagebar forpc" style="cursor: pointer; background-size: contain;background-image: url(https://img2024.cnblogs.com/blog/35695/202511/35695-20251108062452857-2055084983.jpg);">
+                    <img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/35695-20251108062446442-726651367.jpg" style="" onload="countCreativeImpressions('C0-聚合数据')">
+                    
+                    <img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/35695-20251108062450387-2090760658.jpg" class="right">
+                    <span id="c0_impression" style="display:none"></span>
+                </div>
+            </a>
+        <div id="imagebar" class="imagebar-mobile imagebar-text-mobile formobile">
+                <a href="https://qoder.cnblogs.com/" onclick="countCreativeClicks('M2-Qoder')" rel="nofollow">
+                    <img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/35695-20251025102907236-509444921.jpg" alt="" onload="countCreativeImpressionsOnMobile('M2-Qoder')">
+                    <span id="m2_impression" style="display:none"></span>
+                </a>
+        </div>
+    <div id="top_nav" class="navbar forpc">
+        <nav id="nav_main" class="navbar-main">
+            <ul id="nav_left" class="navbar-list navbar-left">
+                <li class="navbar-branding">
+                    <a href="https://www.cnblogs.com/" title="开发者的网上家园" role="banner">
+                        <img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/logo.svg" alt="博客园logo">
+                    </a>
+                </li>
+                <li><a href="https://cnblogs.vip/">会员</a></li>
+                <li><a href="https://www.cnblogs.com/cmt/p/18500368">众包</a></li>
+                <li><a href="https://news.cnblogs.com/" onclick="countClicks('nav', 'skin-navbar-news')">新闻</a></li>
+                <li><a href="https://q.cnblogs.com/" onclick="countClicks('nav', 'skin-navbar-q')">博问</a></li>
+                <li><a href="https://ing.cnblogs.com/" onclick="countClicks('nav', 'skin-navbar-ing')">闪存</a></li>
+                <li><a href="https://www.cnblogs.com/cmt/p/19081960">赞助商</a></li>
+                <li><a href="https://harmonyos.cnblogs.com/" onclick="countClicks('nav', 'blog-navbar-harmonyos')">HarmonyOS</a></li>
+                <li><a href="https://chat2db-ai.com/" target="_blank" onclick="countClicks('nav', 'skin-navbar-chat2db')">Chat2DB</a></li>
+            </ul>
+            <ul id="nav_right" class="navbar-list navbar-right">
+                <li>
+                    <form id="zzk_search" class="navbar-search dropdown" action="https://zzk.cnblogs.com/s" method="get" role="search">
+                        <input name="w" id="zzk_search_input" placeholder="代码改变世界" type="search" tabindex="3" autocomplete="off">
+                        <button id="zzk_search_button" onclick="window.navbarSearchManager.triggerActiveOption()">
+                            <img id="search_icon" class="focus-hidden" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/search.svg" alt="搜索">
+                            <img class="hidden focus-visible" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/enter.svg" alt="搜索">
+                        </button>
+                        <ul id="navbar_search_options" class="dropdown-menu quick-search-menu">
+                            <li tabindex="0" class="active" onclick="zzkSearch(event, document.getElementById('zzk_search_input').value)">
+                                <div class="keyword-wrapper">
+                                    <img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/search.svg" alt="搜索">
+                                    <div class="keyword"></div>
+                                </div>
+                                <span class="search-area">所有博客</span>
+                            </li>
+                                    <li tabindex="1" onclick="zzkBlogSearch(event, 'gnuemacs', document.getElementById('zzk_search_input').value)">
+                                        <div class="keyword-wrapper">
+                                            <img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/search.svg" alt="搜索">
+                                            <div class="keyword"></div>
+                                        </div>
+                                        <span class="search-area">当前博客</span>
+                                    </li>
+                        </ul>
+                    </form>
+                </li>
+                <li id="navbar_login_status" class="navbar-list">
+                    <a class="navbar-user-info navbar-blog" href="https://i.cnblogs.com/EditPosts.aspx?opt=1" alt="写随笔" title="写随笔" style="display: none;">
+                        <img id="new_post_icon" class="navbar-icon" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/newpost.svg" alt="写随笔">
+                    </a>
+                    <a id="navblog-myblog-icon" class="navbar-user-info navbar-blog" href="https://passport.cnblogs.com/GetBlogApplyStatus.aspx" alt="我的博客" title="我的博客" style="display: none;">
+                        <img id="myblog_icon" class="navbar-icon" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/myblog.svg" alt="我的博客">
+                    </a>
+                    <a class="navbar-user-info navbar-message navbar-icon-wrapper" href="https://msg.cnblogs.com/" alt="短消息" title="短消息" style="display: none;">
+                        <img id="msg_icon" class="navbar-icon" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/message.svg" alt="短消息">
+                        <span id="msg_count" style="display: none"></span>
+                    </a>
+                    <a id="navbar_lite_mode_indicator" data-current-page="blog" style="display: none" href="javascript:void(0)" alt="简洁模式" title="简洁模式启用，您在访问他人博客时会使用简洁款皮肤展示">
+                        <img class="navbar-icon" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/lite-mode-on.svg" alt="简洁模式">
+                    </a>
+                    <div id="user_info" class="navbar-user-info dropdown" style="display: none;">
+                        <a class="dropdown-button" href="https://home.cnblogs.com/">
+                            <img id="user_icon" class="navbar-avatar" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/avatar-default.svg" alt="用户头像">
+                        </a>
+                        <div class="dropdown-menu">
+                            <a id="navblog-myblog-text" href="https://passport.cnblogs.com/GetBlogApplyStatus.aspx">我的博客</a>
+                            <a href="https://home.cnblogs.com/">我的园子</a>
+                            <a href="https://account.cnblogs.com/settings/account">账号设置</a>
+                            <a href="https://vip.cnblogs.com/my">会员中心</a>
+                            <a href="javascript:void(0)" id="navbar_lite_mode_toggle" title="简洁模式会使用简洁款皮肤显示所有博客">
+    简洁模式 <span id="navbar_lite_mode_spinner" class="hide">...</span>
+</a>
+
+                            <a href="javascript:void(0)" onclick="account.logout();">退出登录</a>
+                        </div>
+                    </div>
+                    <a class="navbar-anonymous" href="https://account.cnblogs.com/signup" style="display: inline;">注册</a>
+                    <a class="navbar-anonymous" href="javascript:void(0);" onclick="account.login()" style="display: inline;">登录</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    
+
+    <div id="top">
+	<div>
+    <table class="HeaderTitles">
+        <tbody><tr>
+            <td>
+                <h1 class="HeaderTitle"><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/gnuemacs">gnuemacs</a>
+</h1>
+                <p id="tagline"></p>
+            </td>
+        </tr>
+    </tbody></table>
+</div>
+<div>
+    <table id="HeaderBar" class="HeaderBar">
+        <tbody><tr>
+            <td class="HeaderBarTab" nowrap="nowrap">
+                
+&nbsp;
+<a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+&nbsp;::
+
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/gnuemacs/">
+首页</a>
+&nbsp;::
+
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+&nbsp;::
+
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/gnuemacs">
+联系</a>&nbsp;::
+
+<a id="blog_nav_rss" class="menu" href="javascript:void(0)" data-rss="https://www.cnblogs.com/gnuemacs/rss/">
+订阅</a>
+
+<a id="blog_nav_rss_image" href="https://www.cnblogs.com/gnuemacs/rss/">
+    <img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/xml.gif" alt="订阅">
+</a>&nbsp;::
+
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+
+
+
+            </td>
+			
+            <td class="HeaderBarTabBack" nowrap="nowrap" width="100%">
+                <table class="BlogStatsBar">
+    <tbody><tr>
+        <td width="100%">
+        </td>
+        <td class="BlogStatsBar" nowrap="nowrap">
+            &nbsp;
+            10 随笔 ::
+            0 文章 ::
+            4 评论 ::
+            
+<span title="总阅读数: 17937">
+17937</span> 阅读
+        </td>
+    </tr>
+</tbody></table>
+
+
+            </td>
+        </tr>
+    </tbody></table>
+</div>
+</div>
+<table id="maintable">
+	<tbody><tr><td id="leftmenu">
+	
+		<div id="sidebar_news" class="newsItem">
+    <h3>公告</h3>
+<div class="News">
+	<div id="blog-news" class="sidebar-news">
+    <div id="sidebar_news_container"><div id="profile_block" class="sidebar-profile">
+    昵称：
+    <a href="https://home.cnblogs.com/u/gnuemacs/">
+        gnuemacs
+    </a>
+    <br>
+    园龄：
+    <a href="https://home.cnblogs.com/u/gnuemacs/" title="入园时间：2020-07-17">
+        5年4个月
+    </a>
+    <br>
+    粉丝：
+    <a class="follower-count" href="https://home.cnblogs.com/u/gnuemacs/followers/">
+        5
+    </a>
+    <br>
+    关注：
+    <a class="folowing-count" href="https://home.cnblogs.com/u/gnuemacs/followees/">
+        1
+    </a>
+    <div id="p_b_follow" class="follow-tip">
+<a href="javascript:void(0)" onclick="follow('27ac77ee-f895-4298-1120-08d82a40bef5')">+加关注</a></div>
+    <script>getFollowStatus('27ac77ee-f895-4298-1120-08d82a40bef5');</script>
+</div>
+</div>
+</div>
+<script>loadBlogNews();</script>
+</div>
+
+ 
+</div>
+
+		<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+    <div class="mySearch my-search">
+        <h3 class="catListTitle">搜索</h3>
+        <div id="sidebar_search_box">
+            <div id="widget_my_zzk" class="div_my_zzk">
+                <input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk">
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<div id="sidebar_shortcut" class="sidebar-block">
+    
+<h3 class="catListTitle">
+常用链接
+</h3>
+<ul>
+    <li><a href="https://www.cnblogs.com/gnuemacs/p/" title="我的博客的随笔列表">我的随笔</a></li>
+<li><a href="https://www.cnblogs.com/gnuemacs/MyComments.html" title="我的发表过的评论列表">我的评论</a></li>
+<li><a href="https://www.cnblogs.com/gnuemacs/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li>
+<li><a href="https://www.cnblogs.com/gnuemacs/comments" title="我的博客的评论列表">最新评论</a></li>
+<li><a href="https://www.cnblogs.com/gnuemacs/tag/" title="我的博客的标签列表">我的标签</a></li>
+
+</ul>
+
+</div>
+
+
+
+<div id="sidebar_toptags" class="sidebar-block">
+    
+</div>
+
+
+
+<div id="sidebar_categories">
+
+<div class="mainMenuBackground">
+        <h3>
+            
+    <a class="sidebar-card-title-a" href="https://www.cnblogs.com/gnuemacs/post-categories">随笔分类</a>
+
+
+
+        </h3>
+        <ul>
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/category/1889447.html" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">《计算机组成与设计——软硬件接口》(2)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/category/1920414.html" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">Linux内核(2)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/category/1890291.html" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">编译原理(2)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/category/1946224.html" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">操作系统(1)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/category/1890292.html" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">函数式编程(1)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/category/1889446.html" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">体系结构(4)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/category/1921070.html" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">信息安全(2)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+            
+        </ul>
+        <h3>
+            
+随笔档案
+
+
+        </h3>
+        <ul>
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/p/archive/2021/06" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">2021年6月(1)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/p/archive/2021/03" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">2021年3月(1)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/p/archive/2021/01" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">2021年1月(4)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/p/archive/2020/12" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">2020年12月(2)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+                <li class="menuItemList" data-category-list-item-visible="true" style="display: block">
+                    <a href="https://www.cnblogs.com/gnuemacs/p/archive/2020/11" style="--cnb-category-item-link-indent-size: calc(0 * 1em)" class="category-item-link " rel="" target="">2020年11月(2)</a>
+
+                    <span style="width:10px">
+                        
+                    </span>
+                </li>                
+            
+        </ul>
+</div></div>
+
+<div id="sidebar_topviewedposts" class="sidebar-block">
+    
+<div id="topview_posts_wrap">
+    <h3 class="catListTitle">
+        <a href="https://www.cnblogs.com/gnuemacs/most-viewed" class="sidebar-card-title-a">
+    阅读排行榜
+</a>
+
+    </h3>
+    <div id="TopViewPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/gnuemacs/p/14287120.html">
+                            1. SeaBIOS实现简单分析(4232)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/gnuemacs/p/14311120.html">
+                            2. Linux Kernel信号处理机制源码分析(3169)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/gnuemacs/p/14319856.html">
+                            3. Shadow Stack技术概述(2737)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/gnuemacs/p/14523720.html">
+                            4. glibc动态链接实现方式(2291)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/gnuemacs/p/14316185.html">
+                            5. 几种经典的ROP手段简述(1859)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<div id="sidebar_topcommentedposts" class="sidebar-block">
+    <div id="topfeedback_posts_wrap">
+    <h3 class="catListTitle">
+        <a href="https://www.cnblogs.com/gnuemacs/most-commented" class="sidebar-card-title-a">评论排行榜</a>
+
+    </h3>
+    <div id="TopFeedbackPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/gnuemacs/p/14287120.html">
+                            1. SeaBIOS实现简单分析(2)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/gnuemacs/p/14172600.html">
+                            2. 补码的本质(1)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/gnuemacs/p/14053538.html">
+                            3. ulam——基于C语言的无类型Lambda演算解释器(1)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<div id="sidebar_topdiggedposts" class="sidebar-block">
+    
+<div id="topdigg_posts_wrap">
+    <div class="catListView">
+        <h3 class="catListTitle">
+            <a href="https://www.cnblogs.com/gnuemacs/most-liked" class="sidebar-card-title-a">推荐排行榜</a>
+
+        </h3>
+        <div id="TopDiggPostsBlock">
+            <ul style="word-break: break-all">
+                        <li>
+                            <a href="https://www.cnblogs.com/gnuemacs/p/14523720.html">
+                                1. glibc动态链接实现方式(3)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/gnuemacs/p/14287120.html">
+                                2. SeaBIOS实现简单分析(3)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/gnuemacs/p/14316185.html">
+                                3. 几种经典的ROP手段简述(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/gnuemacs/p/14311120.html">
+                                4. Linux Kernel信号处理机制源码分析(1)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/gnuemacs/p/14172600.html">
+                                5. 补码的本质(1)
+                            </a>
+                        </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</div><div id="sidebar_recentcomments" class="sidebar-block">
+    <div id="recent_comments_wrap" class="RecentComment">
+    <h3 class="catListTitle"><a href="https://www.cnblogs.com/gnuemacs/comments" class="sidebar-card-title-a">最新评论</a></h3>    
+    <div class="RecentCommentBlock">
+        <ul>
+                <li class="recent_comment_title"><a href="https://www.cnblogs.com/gnuemacs/p/14053538.html">1. Re:ulam——基于C语言的无类型Lambda演算解释器</a></li>
+                <li class="recent_comment_body">厉害啊。大部分实现使用haskell我觉得偷懒了，没想到这里有一个c的。 我最近也在实现一个lambda演算解释器。不知道你的<span class="MathJax_Preview" style="color: inherit;"></span><span id="MathJax-Element-1-Frame" class="mjx-chtml MathJax_CHTML" tabindex="0" style="font-size: 119%; position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;&amp;#x03BB;&lt;/mi&gt;&lt;/math&gt;" role="presentation"><span id="MJXc-Node-1" class="mjx-math" aria-hidden="true"><span id="MJXc-Node-2" class="mjx-mrow"><span id="MJXc-Node-3" class="mjx-mi"><span class="mjx-char MJXc-TeX-math-I" style="padding-top: 0.456em; padding-bottom: 0.262em;">λ</span></span></span></span><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>λ</mi></math></span></span><script type="math/tex" id="MathJax-Element-1">\lambda</script> term用什么方式表示？直接使用AST？那样$\alp...</li>
+                <li class="recent_comment_author">--懒人歌</li>
+                <li class="recent_comment_title"><a href="https://www.cnblogs.com/gnuemacs/p/14172600.html">2. Re:补码的本质</a></li>
+                <li class="recent_comment_body"><p>写的好好</p>
+</li>
+                <li class="recent_comment_author">--Ryan__Liu</li>
+                <li class="recent_comment_title"><a href="https://www.cnblogs.com/gnuemacs/p/14287120.html">3. Re:SeaBIOS实现简单分析</a></li>
+                <li class="recent_comment_body"><p>大佬，后面两部分要提上日程了</p>
+</li>
+                <li class="recent_comment_author">--user20220906</li>
+                <li class="recent_comment_title"><a href="https://www.cnblogs.com/gnuemacs/p/14287120.html">4. Re:SeaBIOS实现简单分析</a></li>
+                <li class="recent_comment_body"><p>分析的很细致，学习了</p>
+</li>
+                <li class="recent_comment_author">--斯洛2019</li>
+        </ul>
+    </div>
+</div>
+</div></div>
+                    <script>loadBlogSideColumn();</script>
+	
+</td><td id="main">
+	<div id="post_detail">
+    <div class="post">
+        <div class="postTitle">
+            <a id="cb_post_title_url" class="postTitle2 vertical-middle" href="https://www.cnblogs.com/gnuemacs/p/14287120.html" title="发布于 2021-01-16 20:02">
+    <span role="heading" aria-level="2">SeaBIOS实现简单分析</span>
+    
+
+</a><button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button>
+
+        </div>
+	
+        <div class="postText">
+            <div id="cnblogs_post_body" class="blogpost-body cnblogs-markdown">
+<h1 id="seabios实现简单分析">SeaBIOS实现简单分析<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h1>
+<p>SeaBIOS是一个16bit的x86 BIOS的开源实现，常用于QEMU等仿真器中使用。本文将结合<a href="https://www.seabios.org/Execution_and_code_flow" target="_blank" rel="noopener nofollow">SeaBIOS Execution and code flow</a>和<a href="https://github.com/coreboot/seabios/" target="_blank" rel="noopener nofollow">SeaBIOS的源码</a>对SeaBIOS的全过程进行简单分析。需要注意，本文不是深入的分析，对于一些比较复杂和繁琐的部分直接跳过了。</p>
+<p>从整体角度出发，SeaBIOS包含四个阶段。</p>
+<ul>
+<li>加电自检（Power On Self Test, POST)</li>
+<li>引导（Boot）</li>
+<li>运行时（Main runtime phase）</li>
+<li>继续运行和重启（Resume and reboot）</li>
+</ul>
+<h2 id="加电自检阶段">加电自检阶段<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h2>
+<p>QEMU仿真器会将SeaBIOS加电自检阶段的第一条指令放置在F000:FFF0的位置。当QEMU仿真器启动之后，将会执行这一条指令。为什么放置在F000:FFF0位置呢？</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="highlighter-hljs hljs language-vhdl">+<span class="hljs-comment">------------------+  &lt;- 0xFFFFFFFF (4GB)</span>
+|      <span class="hljs-number">32</span>-<span class="hljs-built_in">bit</span>      |
+|  memory mapped   |
+|     devices      |
+|                  |
+/\/\/\/\/\/\/\/\/\/\
+
+/\/\/\/\/\/\/\/\/\/\
+|                  |
+|      Unused      |
+|                  |
++<span class="hljs-comment">------------------+  &lt;- depends on amount of RAM</span>
+|                  |
+|                  |
+| Extended Memory  |
+|                  |
+|                  |
++<span class="hljs-comment">------------------+  &lt;- 0x00100000 (1MB)</span>
+|     BIOS ROM     |
++<span class="hljs-comment">------------------+  &lt;- 0x000F0000 (960KB)</span>
+|  <span class="hljs-number">16</span>-<span class="hljs-built_in">bit</span> devices, |
+|  expansion ROMs  |
++<span class="hljs-comment">------------------+  &lt;- 0x000C0000 (768KB)</span>
+|   VGA Display    |
++<span class="hljs-comment">------------------+  &lt;- 0x000A0000 (640KB)</span>
+|                  |
+|    Low Memory    |
+|                  |
++<span class="hljs-comment">------------------+  &lt;- 0x00000000</span>
+</code></pre>
+<p>这是从MIT 6.828 
+Lab1当中截取下来的一个图。PC的物理地址空间根据人们长期实践下来的约定，往往被按照上面的方式来划分。而BIOS固件，将会被放置在BIOS 
+ROM的区域当中。这一块区域的范围是F000:0000～F000:FFFF。刚好是64KB。而为什么放在这64KB区域的顶部？因为英特尔设计
+8088处理器的时候，就设计成了上电启动时，将指令指针寄存器IP设置为0xFFF0，将代码段寄存器CS设置为0xF000（指向BIOS 
+ROM这一段）。所以，将第一条指令放在F000:FFF0位置，启动后它将立刻被执行。（实际上，这么说不是很严谨。其实CPU是从
+0xFFFFFFF0，也就是32bit地址线可寻址空间的最后16字节位置开始执行代码的。在刚开机的时候虽然CS为0xF000，但是它的段基址实际
+上是0xFFFF0000，而不是按照*16方法计算出来的0xF0000。这一点的原因在后面的“关于make_bios_writable”部分介
+绍）。</p>
+<p>这个SeaBIOS里的“第一条指令”就在romlayout.S的reset_vector中。</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-assembly highlighter-hljs hljs language-x86asm"><span class="hljs-symbol">reset_vector:</span>
+        ljmpw $SEG_BIOS, $entry_post
+</code></pre>
+<p>通过这条jmp指令，程序跳转到CS:IP为<span class="MathJax_Preview" style="color: inherit;"></span><span id="MathJax-Element-2-Frame" class="mjx-chtml MathJax_CHTML" tabindex="0" style="font-size: 113%; position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;S&lt;/mi&gt;&lt;mi&gt;E&lt;/mi&gt;&lt;msub&gt;&lt;mi&gt;G&lt;/mi&gt;&lt;mi&gt;B&lt;/mi&gt;&lt;/msub&gt;&lt;mi&gt;I&lt;/mi&gt;&lt;mi&gt;O&lt;/mi&gt;&lt;mi&gt;S&lt;/mi&gt;&lt;mo&gt;:&lt;/mo&gt;&lt;/math&gt;" role="presentation"><span id="MJXc-Node-4" class="mjx-math" aria-hidden="true"><span id="MJXc-Node-5" class="mjx-mrow"><span id="MJXc-Node-6" class="mjx-mi"><span class="mjx-char MJXc-TeX-math-I" style="padding-top: 0.48em; padding-bottom: 0.276em; padding-right: 0.032em;">S</span></span><span id="MJXc-Node-7" class="mjx-mi"><span class="mjx-char MJXc-TeX-math-I" style="padding-top: 0.48em; padding-bottom: 0.276em; padding-right: 0.026em;">E</span></span><span id="MJXc-Node-8" class="mjx-msubsup"><span class="mjx-base"><span id="MJXc-Node-9" class="mjx-mi"><span class="mjx-char MJXc-TeX-math-I" style="padding-top: 0.48em; padding-bottom: 0.276em;">G</span></span></span><span class="mjx-sub" style="font-size: 70.7%; vertical-align: -0.212em; padding-right: 0.071em;"><span id="MJXc-Node-10" class="mjx-mi" style=""><span class="mjx-char MJXc-TeX-math-I" style="padding-top: 0.48em; padding-bottom: 0.276em;">B</span></span></span></span><span id="MJXc-Node-11" class="mjx-mi"><span class="mjx-char MJXc-TeX-math-I" style="padding-top: 0.48em; padding-bottom: 0.276em; padding-right: 0.064em;">I</span></span><span id="MJXc-Node-12" class="mjx-mi"><span class="mjx-char MJXc-TeX-math-I" style="padding-top: 0.48em; padding-bottom: 0.276em;">O</span></span><span id="MJXc-Node-13" class="mjx-mi"><span class="mjx-char MJXc-TeX-math-I" style="padding-top: 0.48em; padding-bottom: 0.276em; padding-right: 0.032em;">S</span></span><span id="MJXc-Node-14" class="mjx-mo MJXc-space3"><span class="mjx-char MJXc-TeX-main-R" style="padding-top: 0.14em; padding-bottom: 0.344em;">:</span></span></span></span><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>S</mi><mi>E</mi><msub><mi>G</mi><mi>B</mi></msub><mi>I</mi><mi>O</mi><mi>S</mi><mo>:</mo></math></span></span><script type="math/tex" id="MathJax-Element-2">SEG_BIOS:</script>entry_post的位置。这两个是两个常量，分别为0xF000和0xE05B。而entry_post是如下定义的：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-assembly highlighter-hljs hljs language-x86asm">        ORG <span class="hljs-number">0xe05b</span>
+<span class="hljs-symbol">entry_post:</span>
+        cmpl <span class="hljs-number">$0</span>, %cs:HaveRunPost                // Check for resume/reboot
+        <span class="hljs-keyword">jnz</span> entry_resume
+        ENTRY_INTO32 _cfunc32flat_handle_post   // Normal entry point
+</code></pre>
+<p>entry_post中，首先通过一条cmpl指令，判断是否已经经历过POST阶段。如果已经经历过该阶段，意味着当前不应该重新进行，而应该进
+入继续运行（Resume）。所以，如果%cs:HaveRunPost不为0，意味着已经经历过POST阶段，则进入继续运行
+（entry_resume），具体的过程在第四个阶段会介绍。而对于其他情况，就会进入handle_post函数。</p>
+<p>handle_post是一个32bit的C函数，在post.c文件中。需要注意，此时机器是在16bit实模式下的。为了调用32bit的C函数，通过ENTRY_INTO32，先将机器切换到保护模式，然后才能调用。</p>
+<p>我们进一步分析ENTRY_INTO32是如何实现的。ENTRY_INTO32是一个宏，用于将机器切换到保护模式，然后调用一个C函数。</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-assembly highlighter-hljs hljs language-x86asm"><span class="hljs-meta">        .macro</span> ENTRY_INTO32 cfunc
+        xorw %dx, %dx
+        movw %dx, %ss
+        movl $ BUILD_STACK_ADDR , %esp
+        movl $ \cfunc , %edx
+        <span class="hljs-keyword">jmp</span> transition32
+<span class="hljs-meta">        .endm</span>
+</code></pre>
+<p>可以看到，这里的cfunc是一个指向C编译器生成的函数的Label，被传递到edx寄存器中。此外，ENTRY_INTO32还会设置好堆栈段寄存器SS为0，也就是将BIOS ROM程序函数调用中的堆栈保存在Low Memory区域。</p>
+<p>transition32将使用到edx寄存器里面的值。下面是transition32的实现：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-assembly highlighter-hljs hljs language-x86asm"><span class="hljs-symbol">transition32:</span>
+        // Disable irqs (<span class="hljs-keyword">and</span> clear direction flag)
+        <span class="hljs-keyword">cli</span>
+        <span class="hljs-keyword">cld</span>
+
+        // Disable nmi
+        movl %eax, %ecx
+        movl $CMOS_RESET_CODE|NMI_DISABLE_BIT, %eax
+        outb %al, $PORT_CMOS_INDEX
+        inb $PORT_CMOS_DATA, %al
+
+        // enable a20
+        inb $PORT_A20, %al
+        orb $A20_ENABLE_BIT, %al
+        outb %al, $PORT_A20
+        movl %ecx, %eax
+<span class="hljs-symbol">
+transition32_nmi_off:</span>
+        // Set <span class="hljs-meta">segment</span> descriptors
+        lidtw %cs:pmode_IDT_info
+        lgdtw %cs:rombios32_gdt_48
+
+        // Enable protected mode
+        movl %cr0, %ecx
+        andl $~(CR0_PG|CR0_CD|CR0_NW), %ecx
+        orl $CR0_PE, %ecx
+        movl %ecx, %cr0
+
+        // start 32bit protected mode code
+        ljmpl $SEG32_MODE32_CS, $(BUILD_BIOS_ADDR + 1f)
+<span class="hljs-meta">
+        .code32</span>
+        // init data segments
+<span class="hljs-number">1</span>:      movl $SEG32_MODE32_DS, %ecx
+        movw %cx, %ds
+        movw %cx, %es
+        movw %cx, %ss
+        movw %cx, %fs
+        movw %cx, %gs
+
+        jmpl *%edx
+</code></pre>
+<p>首先，先屏蔽中断，并清空方向标志位。然后通过向一个端口写入NMI_DISABLE_BIT的方式屏蔽NMI（这里具体的不探究）。然后这一点是非常重要的——启动A20 Gate。</p>
+<h3 id="启动a20总线">启动A20总线<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>首先将介绍A20总线。我们知道，8086/8088系列的CPU，在实模式下，按照段地址:偏移地址的方式来寻址。这种方式可以访问的最大内存地
+址为0xFFFF:0xFFFF，转换为物理地址0x10FFEF。而这个物理地址是21bit的，所以为了表示出这个最大的物理地址，至少需要21根地
+址线才能表示。</p>
+<p>然而，8086/8088地址总线只有20根。所以在8086/8088系列的CPU上，比如如果需要寻址0x10FFEF，则会因为地址线数目不
+够，被截断成0x0FFEF。再举个例子，如果要访问物理地址0x100000，则会被截断成0x00000。第21位会被省略。也就是说地址不断增长，
+直到0x100000的时候，会回到“0x00000”的实际物理地址。这个现象被称为“回环”现象。这种地址越界而产生回环的行为被认为是合法的，以至
+于当时很多程序利用到了这个特性（比如假定访问0x100000就是访问0x00000）。</p>
+<p>然而，80286到来了。80286具有24根地址总线。对于为8086处理器设计的程序，设计者可能假定第21位会被省略。然而，在具有24根地
+址总线的80286机器上，则没有这个特性了。于是，如果不做出一些调整。地址总线数目的增加，可能导致向下兼容性被破坏。于是，当时的工程师们想了一个
+办法，设计了A20总线，用来控制第21位（如果最低位编号为0，那第21位的编号就是20）及更高位是否有效。实际上可以想象成，第21位（及更高位）
+都接入了一个和A20总线的与门。当A20总线为1，则高位保持原来的。当A20总线为0，则高位就始终为0。这样，当A20总线为0的时候，
+8086/8088的回环现象将会保持。这么一来旧程序就可以兼容了。</p>
+<p>控制A20总线的端口被称为A20-Gate。使用in/out指令控制，即可控制A20总线是否打开。A20 
+Gate是0x92端口的第二个bit。先获得0x92端口的值并存放在al寄存器中，然后通过or将该寄存器的第二个bit设置为1。然后再将al的值
+写入0x92端口即可。这就是上面的enable a20部分的原理。</p>
+<h3 id="从实模式进入32位保护模式">从实模式进入32位保护模式<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>在16bit实模式下，最多访问20根地址线。且段内偏移不能超过64KB（16位）。而32位保护模式下，则没有了最多访问20根地址线的限制，且段内偏移可以达到4GB（32位）。</p>
+<p>此外，保护模式最大的特点是：原先的段基地址:段偏移的寻址方式，变为段选择符:段偏移的寻址方式。这里不再继续介绍保护模式，因为篇幅有限。有需要者可以自己查阅资料。</p>
+<p>首先，前两条指令将设定中断描述符表和全局描述符表。我们重点关注全局描述符表。</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-comment">// GDT</span>
+u64 rombios32_gdt[] VARFSEG __aligned(<span class="hljs-number">8</span>) = {
+    <span class="hljs-comment">// First entry can't be used.</span>
+    <span class="hljs-number">0x0000000000000000</span>LL,
+    <span class="hljs-comment">// 32 bit flat code segment (SEG32_MODE32_CS)</span>
+    GDT_GRANLIMIT(<span class="hljs-number">0xffffffff</span>) | GDT_CODE | GDT_B,
+    <span class="hljs-comment">// 32 bit flat data segment (SEG32_MODE32_DS)</span>
+    GDT_GRANLIMIT(<span class="hljs-number">0xffffffff</span>) | GDT_DATA | GDT_B,
+    <span class="hljs-comment">// 16 bit code segment base=0xf0000 limit=0xffff (SEG32_MODE16_CS)</span>
+    GDT_LIMIT(BUILD_BIOS_SIZE<span class="hljs-number">-1</span>) | GDT_CODE | GDT_BASE(BUILD_BIOS_ADDR),
+    <span class="hljs-comment">// 16 bit data segment base=0x0 limit=0xffff (SEG32_MODE16_DS)</span>
+    GDT_LIMIT(<span class="hljs-number">0x0ffff</span>) | GDT_DATA,
+    <span class="hljs-comment">// 16 bit code segment base=0xf0000 limit=0xffffffff (SEG32_MODE16BIG_CS)</span>
+    GDT_GRANLIMIT(<span class="hljs-number">0xffffffff</span>) | GDT_CODE | GDT_BASE(BUILD_BIOS_ADDR),
+    <span class="hljs-comment">// 16 bit data segment base=0 limit=0xffffffff (SEG32_MODE16BIG_DS)</span>
+    GDT_GRANLIMIT(<span class="hljs-number">0xffffffff</span>) | GDT_DATA,
+};
+
+<span class="hljs-comment">// GDT descriptor</span>
+<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">descloc_s</span> <span class="hljs-title">rombios32_gdt_48</span> <span class="hljs-title">VARFSEG</span> =</span> {
+    .length = <span class="hljs-keyword">sizeof</span>(rombios32_gdt) - <span class="hljs-number">1</span>,
+    .addr = (u32)rombios32_gdt,
+};
+</code></pre>
+<p>先看（从第0项开始的）第1项</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs">GDT_GRANLIMIT(<span class="hljs-number">0xffffffff</span>) | GDT_CODE | GDT_B
+</code></pre>
+<p>这个GDT项对应的32位段基地址是0x00000000。而长度限制limit为0xFFFFFFFF。并且在32bit保护模式下偏移量也是32bit的。这意味着这个GDT项可以映射到整个物理地址空间（所以叫“Flat” code segment）。</p>
+<p>然后Enter protected mode那里则是进入保护模式的经典方法。控制寄存器CR0的最低位（PE位）如果为1，则表示处理器处于保护模式，否则则处于实模式。我们重点关注</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-assembly highlighter-hljs hljs language-x86asm">orl $CR0_PE, %ecx
+</code></pre>
+<p>这一个指令将PE位置为1。然后再次写入cr0寄存器。处理器即进入保护模式。下一条指令非常奇怪：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-assembly highlighter-hljs hljs language-x86asm">ljmpl $SEG32_MODE32_CS, $(BUILD_BIOS_ADDR + 1f)
+</code></pre>
+<p>这里的1f要区分清楚。指的是前方第一个标签为“1”的位置，而不是代表十六进制数0x1F。下一个标签“1”就是这个指令的下一条。所以，看起来
+这个跳转是没有价值的。实际上，在cr0寄存器被设定好之前，下一条指令已经被放入流水线。而再放入的时候这条指令还是在实模式下的。所以这个ljmp指
+令是为了清空流水线，确保下一条指令在保护模式下执行。</p>
+<p>现在，我们已经在保护模式了！在这里，程序进行了这些操作：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-Assembly highlighter-hljs hljs"><span class="hljs-meta">        .code32</span>
+        // init data segments
+<span class="hljs-number">1</span>:      movl $SEG32_MODE32_DS, %ecx
+        movw %cx, %ds
+        movw %cx, %es
+        movw %cx, %ss
+        movw %cx, %fs
+        movw %cx, %gs
+</code></pre>
+<p>这里实际上含义很明确。就是初始化ds、es、ss、fs、gs寄存器，将数据段的段选择器传递给它们即可。</p>
+<p>然后，就交给C语言编译器编译产生的代码啦！通过一个跳转指令</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-Assembly highlighter-hljs hljs">        jmpl *%edx
+</code></pre>
+<p>就完成了跳转。</p>
+<h3 id="从32位保护模式回到实模式">从32位保护模式回到实模式<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>虽然没有用到这个，但是这里顺便分析一下从32位保护模式回到实模式的方法。SeaBIOS是这样实现的：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-assembly highlighter-hljs hljs language-x86asm"><span class="hljs-symbol">transition16:</span>
+        // Reset data <span class="hljs-meta">segment</span> limits
+        movl $SEG32_MODE16_DS, %ecx
+        movw %cx, %ds
+        movw %cx, %es
+        movw %cx, %ss
+        movw %cx, %fs
+        movw %cx, %gs
+
+        // Jump to 16bit mode
+        ljmpw $SEG32_MODE16_CS, <span class="hljs-number">$1f</span>
+<span class="hljs-meta">
+        .code16</span>
+        // Disable protected mode
+<span class="hljs-number">1</span>:      movl %cr0, %ecx
+        andl $~CR0_PE, %ecx
+        movl %ecx, %cr0
+
+        // <span class="hljs-built_in">far</span> jump to flush <span class="hljs-meta">CPU</span> queue after transition to real mode
+        ljmpw $SEG_BIOS, <span class="hljs-number">$2f</span>
+
+        // restore IDT to normal real-mode defaults
+<span class="hljs-number">2</span>:      lidtw %cs:rmode_IDT_info
+
+        // Clear <span class="hljs-meta">segment</span> registers
+        xorw %cx, %cx
+        movw %cx, %fs
+        movw %cx, %gs
+        movw %cx, %es
+        movw %cx, %ds
+        movw %cx, %ss  // <span class="hljs-meta">Assume</span> stack is <span class="hljs-keyword">in</span> <span class="hljs-meta">segment</span> <span class="hljs-number">0</span>
+
+        jmpl *%edx
+
+</code></pre>
+<p>这里需要注意一些地方。</p>
+<h4 id="恢复段描述符高速缓冲寄存器">恢复段描述符高速缓冲寄存器<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>首先要了解段描述符高速缓冲寄存器（Descriptor cache 
+register）。我们知道，GDT是存在存储器当中的。每一次在存储器中存取数据的时候，CPU需要先寻址，而寻址需要先根据段选择子计算段基址。这
+个计算又需要对存储器中的GDT做一次读取。于是就多了一次存储器访问，大大影响程序执行性能。所以，Intel提供的解决方案是为每一个段寄存器配备一
+个段描述符高速缓冲寄存器。当段寄存器被重新赋值的时候，就根据段选择子，从存储器中读取GDT中的项，然后将段基址以及其他的段描述符信息存储在这个段
+寄存器对应的段描述符高速缓冲寄存器中。下一次寻址的时候，就可以直接查询这个段描述符高速缓冲寄存器。性能好了很多。</p>
+<p>然而这个寄存器，在实模式下仍然是有效的。也就是实模式下仍然会查询该寄存器以获取段基址（其实值就是当前段寄存器的值*16）。具体表格如下（<a href="https://zhuanlan.zhihu.com/p/31972482" target="_blank" rel="noopener nofollow">出处</a>）</p>
+<p><img alt="img" loading="lazy" data-src="https://pic2.zhimg.com/80/v2-2a42a2716b6eb3d200b0dcc27887353d_720w.jpg" class="lazyloaded medium-zoom-image" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/v2-2a42a2716b6eb3d200b0dcc27887353d_720w.png"></p>
+<p>这就给我们一个需要注意的地方。我们在从32位保护模式切换到实模式的时候，要先把段描述符高速缓冲寄存器的内容恢复成实模式下的状态，然后再切换回去。因为在实模式下，我们无法再像保护模式中那样设定寄存器中的值了。</p>
+<p>如何恢复呢？对于非代码段，其实很简单。因为我们段基地址全部初始化成0，其他段界限等也都一样，所以只需要在GDT中新建一个表项目，也就是SeaBIOS源码中打*的这一项，然后将各个数据段寄存器设置成它即可。</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-comment">// GDT</span>
+u64 rombios32_gdt[] VARFSEG __aligned(<span class="hljs-number">8</span>) = {
+    <span class="hljs-comment">// First entry can't be used.</span>
+    <span class="hljs-number">0x0000000000000000</span>LL,
+    <span class="hljs-comment">// 32 bit flat code segment (SEG32_MODE32_CS)</span>
+    GDT_GRANLIMIT(<span class="hljs-number">0xffffffff</span>) | GDT_CODE | GDT_B,
+    <span class="hljs-comment">// 32 bit flat data segment (SEG32_MODE32_DS)</span>
+    GDT_GRANLIMIT(<span class="hljs-number">0xffffffff</span>) | GDT_DATA | GDT_B,
+    <span class="hljs-comment">// 16 bit code segment base=0xf0000 limit=0xffff (SEG32_MODE16_CS)</span>
+    GDT_LIMIT(BUILD_BIOS_SIZE<span class="hljs-number">-1</span>) | GDT_CODE | GDT_BASE(BUILD_BIOS_ADDR),
+    <span class="hljs-comment">// 16 bit data segment base=0x0 limit=0xffff (SEG32_MODE16_DS)</span>
+  	<span class="hljs-comment">// ************************************************</span>
+    GDT_LIMIT(<span class="hljs-number">0x0ffff</span>) | GDT_DATA,
+    <span class="hljs-comment">// 16 bit code segment base=0xf0000 limit=0xffffffff (SEG32_MODE16BIG_CS)</span>
+    GDT_GRANLIMIT(<span class="hljs-number">0xffffffff</span>) | GDT_CODE | GDT_BASE(BUILD_BIOS_ADDR),
+    <span class="hljs-comment">// 16 bit data segment base=0 limit=0xffffffff (SEG32_MODE16BIG_DS)</span>
+    GDT_GRANLIMIT(<span class="hljs-number">0xffffffff</span>) | GDT_DATA,
+};
+</code></pre>
+<p>具体实现就对应了上面的“Reset data segment limits”部分的代码。</p>
+<h4 id="代码段寄存器的恢复">代码段寄存器的恢复<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>我们知道CS寄存器不能通过mov指令修改，于是就不能通过mov指令来恢复CS寄存器对应的段描述符高速缓冲寄存器了。修改CS的唯一方法是通过JMP指令。</p>
+<p>SeaBIOS的实现是，创建了一个SEG32_MODE16_CS表项。然后通过一个ljmp指令跳转，来恢复CS寄存器。</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-assembly highlighter-hljs hljs language-x86asm">ljmpw $SEG32_MODE16_CS, <span class="hljs-number">$1f</span>
+</code></pre>
+<h4 id="关闭pe">关闭PE<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>在上面代码的“Disable protected mode”部分，将CR0寄存器的PE位置0即刻关闭保护模式。然后，和前面一样，通过一个ljmp刷新流水线。确保后面的指令都是在实模式中运行。</p>
+<h3 id="进入handle_post函数">进入handle_post函数<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>通过ENTRY_INTO32 _cfunc32flat_handle_post语句，即先进入保护模式，然后完成对C函数handle_post的调用。</p>
+<p>handle_post函数的定义如下：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-comment">// Entry point for Power On Self Test (POST) - the BIOS initilization</span>
+<span class="hljs-comment">// phase.  This function makes the memory at 0xc0000-0xfffff</span>
+<span class="hljs-comment">// read/writable and then calls dopost().</span>
+<span class="hljs-type">void</span> VISIBLE32FLAT
+<span class="hljs-title function_">handle_post</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+    <span class="hljs-keyword">if</span> (!CONFIG_QEMU &amp;&amp; !CONFIG_COREBOOT)
+        <span class="hljs-keyword">return</span>;
+
+    serial_debug_preinit();
+    debug_banner();
+
+    <span class="hljs-comment">// Check if we are running under Xen.</span>
+    xen_preinit();
+
+    <span class="hljs-comment">// Allow writes to modify bios area (0xf0000)</span>
+    make_bios_writable();
+
+    <span class="hljs-comment">// Now that memory is read/writable - start post process.</span>
+    dopost();
+}
+</code></pre>
+<p>首先是一些基本的准备工作，比如启动串口调试等等，这些细节我们就忽略了。从make_bios_writable开始。</p>
+<h4 id="关于make_bios_writable">关于make_bios_writable<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>这里不放代码，仅仅简单介绍该函数的作用——允许更改RAM中的BIOS 
+ROM区域。在介绍make_bios_writable之前，首先对Shadow 
+RAM做一些介绍。实际上，尽管在启动的时候，是从F000:FFF0加载第一条指令的，你可能会觉得在启动的时候代码段段基址是0xF0000。其实，
+并不是这样的。在计算机启动的时候，代码段段基地址实际上是是0xFFFF0000（这里就不符合那个乘16的计算方式了）。笔者猜测这一一点的实现方式
+是通过段描述符高速缓冲寄存器实现的（实模式下也是通过查询这个寄存器来获得段基址的），开机的时候代码段的对应基址项被设置成0xFFFF0000。</p>
+<p>为什么从这里开始呢？我们知道BIOS是存储在ROM当中的。而Intel有一个习惯，将BIOS固件代码从ROM中映射到可寻址地址的末端（最后
+64K内）。这里的“映射”，并不是复制，而是当读取这个地址的时候，就直接读取ROM存储器当中的值。在8086时期，可寻址的地址为
+0x00000-0xFFFFF，所以说它的“末端”确实是从我们理解的0xF0000开始的。所以在8086时期，硬件设备将会将原本存储于ROM的
+BIOS映射到F000:0000-F000:FFFF。然而，到了后面有32根地址线，实际上末端应该是0xFFFF0000-0xFFFFFFFF这
+一部分。此时的计算机，实际上是将BIOS固件代码映射到0xFFFF0000-0xFFFFFFFF中。</p>
+<p>所以，实际上SeaBIOS的这一行指令：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-assembly highlighter-hljs hljs language-x86asm"><span class="hljs-symbol">reset_vector:</span>
+        ljmpw $SEG_BIOS, $entry_post
+</code></pre>
+<p>是位于0xFFFFFFF0的物理地址位置的。但是我们注意到这是一个Long jump指令，这个指令会使CPU重新计算代码段寄存器，原本的0xFFFF0000基地址，在这一个指令执行之后，就会变成符合乘16计算方式的0xF0000！</p>
+<p>读者可能会想，这不就出问题了吗？32根地址线的PC，BIOS固件明明在最后呀！实际上，为了保持向前兼容性，机器启动的时候会自动将ROM的
+BIOS复制到RAM的BIOS 
+ROM区域当中。所以，通过ljmpw指令跳转之后，因为已经复制了，在RAM当中也有BIOS固件代码。所以是不会有问题的。</p>
+<p>这个复制高地址处的ROM到低地址处的过程被称为Shadow RAM技术。然而，在这个过程后，这段内存会被保护起来，无法进行写入。make_bios_writable函数就用于让这段内存可写，从而便于更改一些静态分配的全局变量值。</p>
+<h4 id="进入dopost">进入dopost<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>刚才已经做好了准备。然后，就可以进入dopost函数了。这个函数是POST过程的主体。depost当中，将会调用maininit函数。下面的“maininit过程”，将作详细介绍。</p>
+<h3 id="maininit过程">maininit过程<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>dopost函数定义如下</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-c highlighter-hljs hljs"><span class="hljs-comment">// Setup for code relocation and then relocate.</span>
+<span class="hljs-type">void</span> VISIBLE32INIT
+<span class="hljs-title function_">dopost</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+    code_mutable_preinit();
+
+    <span class="hljs-comment">// Detect ram and setup internal malloc.</span>
+    qemu_preinit();
+    coreboot_preinit();
+    malloc_preinit();
+
+    <span class="hljs-comment">// Relocate initialization code and call maininit().</span>
+    reloc_preinit(maininit, <span class="hljs-literal">NULL</span>);
+}
+
+</code></pre>
+<p>首先，看code_mutable_preinit。</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-type">void</span>
+<span class="hljs-title function_">code_mutable_preinit</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+    <span class="hljs-keyword">if</span> (HaveRunPost)
+        <span class="hljs-comment">// Already run</span>
+        <span class="hljs-keyword">return</span>;
+    <span class="hljs-comment">// Setup reset-vector entry point (controls legacy reboots).</span>
+    rtc_write(CMOS_RESET_CODE, <span class="hljs-number">0</span>);
+    barrier();
+    HaveRunPost = <span class="hljs-number">1</span>;
+    barrier();
+}
+</code></pre>
+<p>这一段的核心是将HaveRunPost设置为1。可以看出，HaveRunPost实际上相当于一个全局变量，在BIOS 
+ROM中实际上是被初始化为0的。然后将ROM映射到RAM中的BIOS 
+ROM区域之后，通过make_bios_writable，使得这一段RAM区域可写，然后才能更改HaveRunPost的值。</p>
+<p>为了初始化内存，SeaBIOS实现了自己的malloc函数。通过malloc_preinit进行初始化，然后通过reloc_preinit函数将自身代码进行重定位。这些步骤有非常多的工程细节，就忽略不看了。接下来从重要的函数：maininit开始分析。</p>
+<pre class="highlighter-hljs" highlighted="true" cnb-code-toolbar-active="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-comment">// Main setup code.</span>
+<span class="hljs-type">static</span> <span class="hljs-type">void</span>
+<span class="hljs-title function_">maininit</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+    <span class="hljs-comment">// Initialize internal interfaces.</span>
+    interface_init();
+
+    <span class="hljs-comment">// Setup platform devices.</span>
+    platform_hardware_setup();
+
+    <span class="hljs-comment">// Start hardware initialization (if threads allowed during optionroms)</span>
+    <span class="hljs-keyword">if</span> (threads_during_optionroms())
+        device_hardware_setup();
+
+    <span class="hljs-comment">// Run vga option rom</span>
+    vgarom_setup();
+    sercon_setup();
+    enable_vga_console();
+
+    <span class="hljs-comment">// Do hardware initialization (if running synchronously)</span>
+    <span class="hljs-keyword">if</span> (!threads_during_optionroms()) {
+        device_hardware_setup();
+        wait_threads();
+    }
+
+    <span class="hljs-comment">// Run option roms</span>
+    optionrom_setup();
+
+    <span class="hljs-comment">// Allow user to modify overall boot order.</span>
+    interactive_bootmenu();
+    wait_threads();
+
+    <span class="hljs-comment">// Prepare for boot.</span>
+    prepareboot();
+
+    <span class="hljs-comment">// Write protect bios memory.</span>
+    make_bios_readonly();
+
+    <span class="hljs-comment">// Invoke int 19 to start boot process.</span>
+    startBoot();
+}
+</code><div class="cnb-code-toolbar" style="right: 4px; opacity: 0;"><span class="cnb-code-toolbar-item" cnb-code-toolbar-item-id="language-1764809131161">C</span><span class="cnb-code-toolbar-item" cnb-code-toolbar-item-id="copy-1764809131162"><svg class="cnb-code-toolbar-icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M878.250667 981.333333H375.338667a104.661333 104.661333 0 0 1-104.661334-104.661333V375.338667a104.661333 104.661333 0 0 1 104.661334-104.661334h502.912a104.661333 104.661333 0 0 1 104.661333 104.661334v502.912C981.333333 934.485333 934.485333 981.333333 878.250667 981.333333zM375.338667 364.373333a10.666667 10.666667 0 0 0-10.922667 10.965334v502.912c0 6.229333 4.693333 10.922667 10.922667 10.922666h502.912a10.666667 10.666667 0 0 0 10.922666-10.922666V375.338667a10.666667 10.666667 0 0 0-10.922666-10.922667H375.338667z"></path><path d="M192.597333 753.322667H147.328A104.661333 104.661333 0 0 1 42.666667 648.661333V147.328A104.661333 104.661333 0 0 1 147.328 42.666667H650.24a104.661333 104.661333 0 0 1 104.618667 104.661333v49.962667c0 26.538667-20.309333 46.848-46.848 46.848a46.037333 46.037333 0 0 1-46.848-46.848V147.328a10.666667 10.666667 0 0 0-10.922667-10.965333H147.328a10.666667 10.666667 0 0 0-10.965333 10.965333V650.24c0 6.229333 4.693333 10.922667 10.965333 10.922667h45.269333c26.538667 0 46.848 20.309333 46.848 46.848 0 26.538667-21.845333 45.312-46.848 45.312z"></path></svg> 复制</span><span class="cnb-code-toolbar-item" cnb-code-toolbar-item-id="fullscreen-1764809131162"><svg class="cnb-code-toolbar-icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M149.52928355 149.52928355h258.90765513V45.96622222H97.74775349a51.78153127 51.78153127 0 0 0-51.78153127 51.78153127v310.68918519h103.56306133V149.52928355zM97.74775349 978.03377778h310.68918519v-103.56306133H149.52928355v-258.90765513H45.96622222v310.68918519a51.78153127 51.78153127 0 0 0 51.78153127 51.78153127z m880.28602429-51.78153127v-310.68918519h-103.56306133v258.90765513h-258.90765513v103.56306133h310.68918519a51.78153127 51.78153127 0 0 0 51.78153127-51.78153127zM615.56306132 149.52928355h258.90765513v258.90765513h103.56306133V97.74775349a51.78153127 51.78153127 0 0 0-51.78153127-51.78153127h-310.68918519v103.56306133z" fill=""></path></svg> 全屏</span></div></pre>
+<p>maininit函数中，有很多重要的部分。我们来看一看。</p>
+<p>首先是interface_init函数。</p>
+<pre class="highlighter-hljs" highlighted="true" cnb-code-toolbar-active="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-type">void</span>
+<span class="hljs-title function_">interface_init</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+    <span class="hljs-comment">// Running at new code address - do code relocation fixups</span>
+    malloc_init();
+
+    <span class="hljs-comment">// Setup romfile items.</span>
+    qemu_cfg_init();
+    coreboot_cbfs_init();
+    multiboot_init();
+
+    <span class="hljs-comment">// Setup ivt/bda/ebda</span>
+    ivt_init();
+    bda_init();
+
+    <span class="hljs-comment">// Other interfaces</span>
+    boot_init();
+    bios32_init();
+    pmm_init();
+    pnp_init();
+    kbd_init();
+    mouse_init();
+}
+</code><div class="cnb-code-toolbar" style="right: 4px; opacity: 0;"><span class="cnb-code-toolbar-item" cnb-code-toolbar-item-id="language-1764809136958">C</span><span class="cnb-code-toolbar-item" cnb-code-toolbar-item-id="copy-1764809136959"><svg class="cnb-code-toolbar-icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M878.250667 981.333333H375.338667a104.661333 104.661333 0 0 1-104.661334-104.661333V375.338667a104.661333 104.661333 0 0 1 104.661334-104.661334h502.912a104.661333 104.661333 0 0 1 104.661333 104.661334v502.912C981.333333 934.485333 934.485333 981.333333 878.250667 981.333333zM375.338667 364.373333a10.666667 10.666667 0 0 0-10.922667 10.965334v502.912c0 6.229333 4.693333 10.922667 10.922667 10.922666h502.912a10.666667 10.666667 0 0 0 10.922666-10.922666V375.338667a10.666667 10.666667 0 0 0-10.922666-10.922667H375.338667z"></path><path d="M192.597333 753.322667H147.328A104.661333 104.661333 0 0 1 42.666667 648.661333V147.328A104.661333 104.661333 0 0 1 147.328 42.666667H650.24a104.661333 104.661333 0 0 1 104.618667 104.661333v49.962667c0 26.538667-20.309333 46.848-46.848 46.848a46.037333 46.037333 0 0 1-46.848-46.848V147.328a10.666667 10.666667 0 0 0-10.922667-10.965333H147.328a10.666667 10.666667 0 0 0-10.965333 10.965333V650.24c0 6.229333 4.693333 10.922667 10.965333 10.922667h45.269333c26.538667 0 46.848 20.309333 46.848 46.848 0 26.538667-21.845333 45.312-46.848 45.312z"></path></svg> 复制</span><span class="cnb-code-toolbar-item" cnb-code-toolbar-item-id="fullscreen-1764809136959"><svg class="cnb-code-toolbar-icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M149.52928355 149.52928355h258.90765513V45.96622222H97.74775349a51.78153127 51.78153127 0 0 0-51.78153127 51.78153127v310.68918519h103.56306133V149.52928355zM97.74775349 978.03377778h310.68918519v-103.56306133H149.52928355v-258.90765513H45.96622222v310.68918519a51.78153127 51.78153127 0 0 0 51.78153127 51.78153127z m880.28602429-51.78153127v-310.68918519h-103.56306133v258.90765513h-258.90765513v103.56306133h310.68918519a51.78153127 51.78153127 0 0 0 51.78153127-51.78153127zM615.56306132 149.52928355h258.90765513v258.90765513h103.56306133V97.74775349a51.78153127 51.78153127 0 0 0-51.78153127-51.78153127h-310.68918519v103.56306133z" fill=""></path></svg> 全屏</span></div></pre>
+<p>这个函数用于加载内部的一些接口。下面是其步骤。</p>
+<h4 id="初始化中断向量表ivt">初始化中断向量表IVT<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>中断向量表（Interrupt Vector 
+Table）是一张在实模式下使用的表。顾名思义，这个表将中断号映射到中断过程的一个列表。中断向量表必须存储在低地址区域（也就是从
+0x00000000）开始，大小一般是0x400字节。是一块由很多个项组成的连续的内存空间。每一项，就对应了一个中断，如下所示（<a href="https://wiki.osdev.org/Interrupt_Vector_Table" target="_blank" rel="noopener nofollow">出处</a>）：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="highlighter-hljs hljs language-sql"> <span class="hljs-operator">+</span><span class="hljs-comment">-----------+-----------+</span>
+ <span class="hljs-operator">|</span>  Segment  <span class="hljs-operator">|</span>  <span class="hljs-keyword">Offset</span>   <span class="hljs-operator">|</span>
+ <span class="hljs-operator">+</span><span class="hljs-comment">-----------+-----------+</span>
+ <span class="hljs-number">4</span>           <span class="hljs-number">2</span>           <span class="hljs-number">0</span>
+</code></pre>
+<p>每一项被称为中断向量（Interrupt Vector）。笔者认为因为每一项都可以写成(segment, 
+offset)的形式，仿佛一个二维向量坐标，所以被称为“中断向量”。可以看出每一项占据4个字节，前两个字节是段，后两个字节是偏移。而这一项实际上
+就对应了一个中断服务处理程序的入口地址（段:偏移）。只需要修改这个表里的地址，即可更换中断处理程序。</p>
+<p>而每一个中断都有一个中断号码，号码就是中断向量的索引。比如这个表里前四个字节对应的项，中断号就是0，然后4-8字节对应的项中断号就是1。可以很容易地看出，中断号*4为首地址的4字节内存区域就对应了该中断号对应的中断处理程序位置。</p>
+<p>SeaBIOS中，ivt_init就是初始化一些中断。我们看实现。</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-type">static</span> <span class="hljs-type">void</span>
+<span class="hljs-title function_">ivt_init</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+    dprintf(<span class="hljs-number">3</span>, <span class="hljs-string">"init ivt\n"</span>);
+
+    <span class="hljs-comment">// Initialize all vectors to the default handler.</span>
+    <span class="hljs-type">int</span> i;
+    <span class="hljs-keyword">for</span> (i=<span class="hljs-number">0</span>; i&lt;<span class="hljs-number">256</span>; i++)
+        SET_IVT(i, FUNC16(entry_iret_official));
+
+    <span class="hljs-comment">// Initialize all hw vectors to a default hw handler.</span>
+    <span class="hljs-keyword">for</span> (i=BIOS_HWIRQ0_VECTOR; i&lt;BIOS_HWIRQ0_VECTOR+<span class="hljs-number">8</span>; i++)
+        SET_IVT(i, FUNC16(entry_hwpic1));
+    <span class="hljs-keyword">for</span> (i=BIOS_HWIRQ8_VECTOR; i&lt;BIOS_HWIRQ8_VECTOR+<span class="hljs-number">8</span>; i++)
+        SET_IVT(i, FUNC16(entry_hwpic2));
+
+    <span class="hljs-comment">// Initialize software handlers.</span>
+    SET_IVT(<span class="hljs-number">0x02</span>, FUNC16(entry_02));
+    SET_IVT(<span class="hljs-number">0x05</span>, FUNC16(entry_05));
+    SET_IVT(<span class="hljs-number">0x10</span>, FUNC16(entry_10));
+    SET_IVT(<span class="hljs-number">0x11</span>, FUNC16(entry_11));
+    SET_IVT(<span class="hljs-number">0x12</span>, FUNC16(entry_12));
+    SET_IVT(<span class="hljs-number">0x13</span>, FUNC16(entry_13_official));
+    SET_IVT(<span class="hljs-number">0x14</span>, FUNC16(entry_14));
+    SET_IVT(<span class="hljs-number">0x15</span>, FUNC16(entry_15_official));
+    SET_IVT(<span class="hljs-number">0x16</span>, FUNC16(entry_16));
+    SET_IVT(<span class="hljs-number">0x17</span>, FUNC16(entry_17));
+    SET_IVT(<span class="hljs-number">0x18</span>, FUNC16(entry_18));
+    SET_IVT(<span class="hljs-number">0x19</span>, FUNC16(entry_19_official));
+    SET_IVT(<span class="hljs-number">0x1a</span>, FUNC16(entry_1a_official));
+    SET_IVT(<span class="hljs-number">0x40</span>, FUNC16(entry_40));
+
+    <span class="hljs-comment">// INT 60h-66h reserved for user interrupt</span>
+    <span class="hljs-keyword">for</span> (i=<span class="hljs-number">0x60</span>; i&lt;=<span class="hljs-number">0x66</span>; i++)
+        SET_IVT(i, SEGOFF(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>));
+
+    <span class="hljs-comment">// set vector 0x79 to zero</span>
+    <span class="hljs-comment">// this is used by 'gardian angel' protection system</span>
+    SET_IVT(<span class="hljs-number">0x79</span>, SEGOFF(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>));
+}
+</code></pre>
+<p>首先，ivt_init将所有中断初始化到一个空处理函数（相当于只有一条return语句）。将所有硬中断也都初始化到一个默认处理函数。然后是
+一些默认的中断处理程序。比如经典的VGA服务INT 10H，经典的磁盘服务INT 13H等等。对于每一项的事先，这里不多介绍。</p>
+<h4 id="初始化bios数据区域bda">初始化BIOS数据区域BDA<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>BDA（BIOS Data Area），是存放计算机当前一些状态的位置。在SeaBIOS中，其定义如下：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-c highlighter-hljs hljs"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">bios_data_area_s</span> {</span>
+    <span class="hljs-comment">// 40:00</span>
+    u16 port_com[<span class="hljs-number">4</span>];
+    u16 port_lpt[<span class="hljs-number">3</span>];
+    u16 ebda_seg;
+    <span class="hljs-comment">// 40:10</span>
+    u16 equipment_list_flags;
+    u8 pad1;
+    u16 mem_size_kb;
+    u8 pad2;
+    u8 ps2_ctrl_flag;
+    u16 kbd_flag0;
+    u8 alt_keypad;
+    u16 kbd_buf_head;
+    u16 kbd_buf_tail;
+    <span class="hljs-comment">// 40:1e</span>
+    u8 kbd_buf[<span class="hljs-number">32</span>];
+    u8 floppy_recalibration_status;
+    u8 floppy_motor_status;
+    <span class="hljs-comment">// 40:40</span>
+    u8 floppy_motor_counter;
+    u8 floppy_last_status;
+    u8 floppy_return_status[<span class="hljs-number">7</span>];
+    u8 video_mode;
+    u16 video_cols;
+    u16 video_pagesize;
+    u16 video_pagestart;
+    <span class="hljs-comment">// 40:50</span>
+    u16 cursor_pos[<span class="hljs-number">8</span>];
+    <span class="hljs-comment">// 40:60</span>
+    u16 cursor_type;
+    u8 video_page;
+    u16 crtc_address;
+    u8 video_msr;
+    u8 video_pal;
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">segoff_s</span> <span class="hljs-title">jump</span>;</span>
+    u8 other_6b;
+    u32 timer_counter;
+    <span class="hljs-comment">// 40:70</span>
+    u8 timer_rollover;
+    u8 break_flag;
+    u16 soft_reset_flag;
+    u8 disk_last_status;
+    u8 hdcount;
+    u8 disk_control_byte;
+    u8 port_disk;
+    u8 lpt_timeout[<span class="hljs-number">4</span>];
+    u8 com_timeout[<span class="hljs-number">4</span>];
+    <span class="hljs-comment">// 40:80</span>
+    u16 kbd_buf_start_offset;
+    u16 kbd_buf_end_offset;
+    u8 video_rows;
+    u16 char_height;
+    u8 video_ctl;
+    u8 video_switches;
+    u8 modeset_ctl;
+    u8 dcc_index;
+    u8 floppy_last_data_rate;
+    u8 disk_status_controller;
+    u8 disk_error_controller;
+    u8 disk_interrupt_flag;
+    u8 floppy_harddisk_info;
+    <span class="hljs-comment">// 40:90</span>
+    u8 floppy_media_state[<span class="hljs-number">4</span>];
+    u8 floppy_track[<span class="hljs-number">2</span>];
+    u8 kbd_flag1;
+    u8 kbd_led;
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">segoff_s</span> <span class="hljs-title">user_wait_complete_flag</span>;</span>
+    u32 user_wait_timeout;
+    <span class="hljs-comment">// 40:A0</span>
+    u8 rtc_wait_flag;
+    u8 other_a1[<span class="hljs-number">7</span>];
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">segoff_s</span> <span class="hljs-title">video_savetable</span>;</span>
+    u8 other_ac[<span class="hljs-number">4</span>];
+    <span class="hljs-comment">// 40:B0</span>
+    u8 other_b0[<span class="hljs-number">5</span>*<span class="hljs-number">16</span>];
+} PACKED;
+</code></pre>
+<p>bda_init就是初始化该区域的函数。这里不多介绍。</p>
+<h5 id="boot阶段前最后的准备">BOOT阶段前最后的准备<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h5>
+<p>然后是一些其他的接口，比如键盘、鼠标接口的加载。在interface_init函数的最后部分定义。这里不再介绍。在maininit函数中，剩余的部分</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-comment">// Run vga option rom</span>
+vgarom_setup();
+sercon_setup();
+enable_vga_console();
+
+<span class="hljs-comment">// Do hardware initialization (if running synchronously)</span>
+<span class="hljs-keyword">if</span> (!threads_during_optionroms()) {
+  device_hardware_setup();
+  wait_threads();
+}
+
+<span class="hljs-comment">// Run option roms</span>
+optionrom_setup();
+
+<span class="hljs-comment">// Allow user to modify overall boot order.</span>
+interactive_bootmenu();
+wait_threads();
+
+<span class="hljs-comment">// Prepare for boot.</span>
+prepareboot();
+
+<span class="hljs-comment">// Write protect bios memory.</span>
+make_bios_readonly();
+
+<span class="hljs-comment">// Invoke int 19 to start boot process.</span>
+startBoot();
+</code></pre>
+<p>用于加载VGA设备、初始化硬件、为用户提供更改启动顺序的界面。然后，将刚才被设置为可写的RAM中的BIOS ROM部分，重新保护起来。然后，通过一个startBoot函数，调用INT19中断，进入Boot状态。</p>
+<h4 id="startboot">startBoot<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-type">void</span> VISIBLE32FLAT
+<span class="hljs-title function_">startBoot</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+    <span class="hljs-comment">// Clear low-memory allocations (required by PMM spec).</span>
+    <span class="hljs-built_in">memset</span>((<span class="hljs-type">void</span>*)BUILD_STACK_ADDR, <span class="hljs-number">0</span>, BUILD_EBDA_MINIMUM - BUILD_STACK_ADDR);
+
+    dprintf(<span class="hljs-number">3</span>, <span class="hljs-string">"Jump to int19\n"</span>);
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">bregs</span> <span class="hljs-title">br</span>;</span>
+    <span class="hljs-built_in">memset</span>(&amp;br, <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(br));
+    br.flags = F_IF;
+    call16_int(<span class="hljs-number">0x19</span>, &amp;br);
+}
+</code></pre>
+<p>当前，CPU出于保护模式。但是在引导至OS Bootloader之前，需要告别保护模式，回到实模式。call16_int使用之前提到的trainsition16回到实模式之后，调用INT 19H中断，进入BOOT状态。</p>
+<h2 id="引导阶段">引导阶段<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h2>
+<p>boot阶段的代码，是从handle_19，也就是的0x19中断处理程序开始。</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-type">void</span> VISIBLE32FLAT
+<span class="hljs-title function_">handle_19</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+    debug_enter(<span class="hljs-literal">NULL</span>, DEBUG_HDL_19);
+    BootSequence = <span class="hljs-number">0</span>;
+    do_boot(<span class="hljs-number">0</span>);
+}
+</code></pre>
+<p>do_boot函数：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-c highlighter-hljs hljs"><span class="hljs-type">static</span> <span class="hljs-type">void</span>
+<span class="hljs-title function_">do_boot</span><span class="hljs-params">(<span class="hljs-type">int</span> seq_nr)</span>
+{
+    <span class="hljs-keyword">if</span> (! CONFIG_BOOT)
+        panic(<span class="hljs-string">"Boot support not compiled in.\n"</span>);
+
+    <span class="hljs-keyword">if</span> (seq_nr &gt;= BEVCount)
+        boot_fail();
+
+    <span class="hljs-comment">// Boot the given BEV type.</span>
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">bev_s</span> *<span class="hljs-title">ie</span> =</span> &amp;BEV[seq_nr];
+    <span class="hljs-keyword">switch</span> (ie-&gt;type) {
+    <span class="hljs-keyword">case</span> IPL_TYPE_FLOPPY:
+        <span class="hljs-built_in">printf</span>(<span class="hljs-string">"Booting from Floppy...\n"</span>);
+        boot_disk(<span class="hljs-number">0x00</span>, CheckFloppySig);
+        <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> IPL_TYPE_HARDDISK:
+        <span class="hljs-built_in">printf</span>(<span class="hljs-string">"Booting from Hard Disk...\n"</span>);
+        boot_disk(<span class="hljs-number">0x80</span>, <span class="hljs-number">1</span>);
+        <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> IPL_TYPE_CDROM:
+        boot_cdrom((<span class="hljs-type">void</span>*)ie-&gt;<span class="hljs-built_in">vector</span>);
+        <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> IPL_TYPE_CBFS:
+        boot_cbfs((<span class="hljs-type">void</span>*)ie-&gt;<span class="hljs-built_in">vector</span>);
+        <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> IPL_TYPE_BEV:
+        boot_rom(ie-&gt;<span class="hljs-built_in">vector</span>);
+        <span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span> IPL_TYPE_HALT:
+        boot_fail();
+        <span class="hljs-keyword">break</span>;
+    }
+
+    <span class="hljs-comment">// Boot failed: invoke the boot recovery function</span>
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">bregs</span> <span class="hljs-title">br</span>;</span>
+    <span class="hljs-built_in">memset</span>(&amp;br, <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(br));
+    br.flags = F_IF;
+    call16_int(<span class="hljs-number">0x18</span>, &amp;br);
+}
+</code></pre>
+<p>可以发现这里为从软盘、硬盘、CDROM等一系列设备中引导提供了支持。我们重点关注从硬盘引导。</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-type">static</span> <span class="hljs-type">void</span>
+<span class="hljs-title function_">boot_disk</span><span class="hljs-params">(u8 bootdrv, <span class="hljs-type">int</span> checksig)</span>
+{
+    u16 bootseg = <span class="hljs-number">0x07c0</span>;
+
+    <span class="hljs-comment">// Read sector</span>
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">bregs</span> <span class="hljs-title">br</span>;</span>
+    <span class="hljs-built_in">memset</span>(&amp;br, <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(br));
+    br.flags = F_IF;
+    br.dl = bootdrv;
+    br.es = bootseg;
+    br.ah = <span class="hljs-number">2</span>;
+    br.al = <span class="hljs-number">1</span>;
+    br.cl = <span class="hljs-number">1</span>;
+    call16_int(<span class="hljs-number">0x13</span>, &amp;br);
+
+    <span class="hljs-keyword">if</span> (br.flags &amp; F_CF) {
+        <span class="hljs-built_in">printf</span>(<span class="hljs-string">"Boot failed: could not read the boot disk\n\n"</span>);
+        <span class="hljs-keyword">return</span>;
+    }
+
+    <span class="hljs-keyword">if</span> (checksig) {
+        <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">mbr_s</span> *<span class="hljs-title">mbr</span> =</span> (<span class="hljs-type">void</span>*)<span class="hljs-number">0</span>;
+        <span class="hljs-keyword">if</span> (GET_FARVAR(bootseg, mbr-&gt;signature) != MBR_SIGNATURE) {
+            <span class="hljs-built_in">printf</span>(<span class="hljs-string">"Boot failed: not a bootable disk\n\n"</span>);
+            <span class="hljs-keyword">return</span>;
+        }
+    }
+
+    tpm_add_bcv(bootdrv, MAKE_FLATPTR(bootseg, <span class="hljs-number">0</span>), <span class="hljs-number">512</span>);
+
+    <span class="hljs-comment">/* Canonicalize bootseg:bootip */</span>
+    u16 bootip = (bootseg &amp; <span class="hljs-number">0x0fff</span>) &lt;&lt; <span class="hljs-number">4</span>;
+    bootseg &amp;= <span class="hljs-number">0xf000</span>;
+
+    call_boot_entry(SEGOFF(bootseg, bootip), bootdrv);
+}
+
+</code></pre>
+<h3 id="读取主引导扇区">读取主引导扇区<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>首先，通过调用0x13中断读取主引导扇区。读扇区的参数定义如下：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="highlighter-hljs hljs language-x86asm">功能描述：读扇区 
+入口参数：<span class="hljs-number">AH</span>＝<span class="hljs-number">02H</span> 
+<span class="hljs-built_in">AL</span>＝扇区数 
+<span class="hljs-number">CH</span>＝柱面 
+<span class="hljs-built_in">CL</span>＝扇区 
+<span class="hljs-number">DH</span>＝磁头 
+<span class="hljs-built_in">DL</span>＝驱动器，<span class="hljs-number">00H</span>~<span class="hljs-number">7FH</span>：软盘；<span class="hljs-number">80H</span>~<span class="hljs-number">0FFH</span>：硬盘 
+<span class="hljs-symbol">ES:</span><span class="hljs-built_in">BX</span>＝缓冲区的地址 
+出口参数：CF＝<span class="hljs-number">0</span>——操作成功，<span class="hljs-number">AH</span>＝<span class="hljs-number">00H</span>，<span class="hljs-built_in">AL</span>＝传输的扇区数，否则，<span class="hljs-number">AH</span>＝状态代码
+</code></pre>
+<p>首先，需要了解（复习）磁盘的CHS模式。Cylinder-head-sector（柱面-磁头-扇区， CHS）是一个定位磁盘数据位置的方法。因为向磁盘读取数据，要先告诉磁盘读取哪里的数据。</p>
+<p>下面的两张图片选自<a href="https://en.wikipedia.org/wiki/Cylinder-head-sector" target="_blank" rel="noopener nofollow">Wikipedia</a>。</p>
+<p><img alt="Cylinder, head, and sector of a hard drive." loading="lazy" data-src="https://img2020.cnblogs.com/blog/2101132/202101/2101132-20210116200132694-1537545889.png" class="lazyload"></p>
+<p>首先介绍磁头。一个磁盘可以看成多个重叠的盘片组成。磁头可以选择读取哪一个盘片上的数据。</p>
+<p>其次是柱面。在某一个盘片上，找一个同心圆，这个圆对应的圈叫做磁道。而把所有盘片叠在一起，所有磁道构成的面叫做柱面。所以实际上柱面可以指定在当前磁头所指向的盘片上磁道的“半径”。</p>
+<p>然后是扇区。扇区的概念非常重要。一个磁道上连续的一段称为扇区。每个磁道被等分为若干个扇区。一般来说，一个扇区包含512字节的数据。</p>
+<p>磁头、柱面都是从0开始编号的。扇区是从1开始编号的。</p>
+<p>从代码的Read sector部分可以看出，boot_disk将读取使用bootdrv指定的磁盘驱动器上，0磁头，0柱面，1扇区为起始位置，扇区数为1（512字节）的一段数据。然后将这段部分复制到0x7c00的内存地址当中。这个内存地址可谓是非常经典。</p>
+<p>在checksig的部分，GET_FARVAR那一句的含义就是以bootseg为段来读取mbr中的signature。而mbr此时指向的地址偏移量为0。我们看mbr_s数据结构的定义：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">mbr_s</span> {</span>
+    u8 code[<span class="hljs-number">440</span>];
+    <span class="hljs-comment">// 0x01b8</span>
+    u32 diskseg;
+    <span class="hljs-comment">// 0x01bc</span>
+    u16 null;
+    <span class="hljs-comment">// 0x01be</span>
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">partition_s</span> <span class="hljs-title">partitions</span>[4];</span>
+    <span class="hljs-comment">// 0x01fe</span>
+    u16 signature;
+} PACKED;
+</code></pre>
+<p>可以看出signature是MBR主引导扇区代码的最后两个字节。这里又是一大经典。可以看出，checksig的部分是用于校验主引导扇区代码的最后两个字节是否为MBR_SIGNATURE。而这个值恰恰就是那个经典的数字：0xAA55。</p>
+<h3 id="接近尾声">接近尾声<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>引导过程快要接近尾声了。我们注意到一个“规范化”（Canonicalize）操作：</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs">    <span class="hljs-comment">/* Canonicalize bootseg:bootip */</span>
+    u16 bootip = (bootseg &amp; <span class="hljs-number">0x0fff</span>) &lt;&lt; <span class="hljs-number">4</span>;
+    bootseg &amp;= <span class="hljs-number">0xf000</span>;
+</code></pre>
+<p>这个操作实际上是为了调用OS Loader的时候，段为0x0000，而偏移为0x7C00。而不是段为0x07C0，而偏移为0x0000。</p>
+<p>最后，通过一个call_boot_entry函数，转移到OS Loader。此时，系统处于实模式下。</p>
+<pre class="highlighter-hljs" highlighted="true"><code class="language-C highlighter-hljs hljs"><span class="hljs-type">static</span> <span class="hljs-type">void</span>
+<span class="hljs-title function_">call_boot_entry</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> segoff_s bootsegip, u8 bootdrv)</span>
+{
+    dprintf(<span class="hljs-number">1</span>, <span class="hljs-string">"Booting from %04x:%04x\n"</span>, bootsegip.seg, bootsegip.offset);
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">bregs</span> <span class="hljs-title">br</span>;</span>
+    <span class="hljs-built_in">memset</span>(&amp;br, <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(br));
+    br.flags = F_IF;
+    br.code = bootsegip;
+    <span class="hljs-comment">// Set the magic number in ax and the boot drive in dl.</span>
+    br.dl = bootdrv;
+    br.ax = <span class="hljs-number">0xaa55</span>;
+    farcall16(&amp;br);
+}
+</code></pre>
+<p>这就是引导部分的主要内容。</p>
+<h2 id="剩余部分">剩余部分<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h2>
+<p>因为最近事情比较多，最后两部分还没有写完。后面更新。</p>
+
+</div>
+<div class="clear"></div>
+<div id="blog_post_info_block" role="contentinfo">
+
+
+
+
+    <div id="blog_post_info">
+<div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(14287120,cb_blogId,1);green_channel_success(this,'谢谢推荐！');">好文要顶</a>
+        <a id="green_channel_follow" onclick="follow('27ac77ee-f895-4298-1120-08d82a40bef5');" href="javascript:void(0);">关注我</a>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a>
+    <a id="green_channel_wechat" href="javascript:void(0);" onclick="shareManager.wechatShare()">微信分享</a>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/gnuemacs/" target="_blank"><img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/sample_face.gif" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info post-detail-profile">
+            <a href="https://home.cnblogs.com/u/gnuemacs/">gnuemacs</a>
+            <br>
+            <a href="https://home.cnblogs.com/u/gnuemacs/followers/">粉丝 - <span class="follower-count">5</span></a>
+            <a href="https://home.cnblogs.com/u/gnuemacs/followees/">关注 - <span class="following-count">1</span></a><br>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow" class="follow-tip">
+                <a href="javascript:void(0);" onclick="follow('27ac77ee-f895-4298-1120-08d82a40bef5');return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(14287120,'Digg')">
+        <span class="diggnum" id="digg_count">3</span>
+    </div>
+    <div class="buryit" onclick="votePost(14287120,'Bury')">
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+        <div id="vip_tip"><a class="tip" href="https://cnblogs.vip/" target="_blank">升级成为会员</a></div>
+</div>
+
+<script type="text/javascript">
+    currentDiggType = 0;
+</script>
+</div>
+    <div class="clear"></div>
+    <div id="post_next_prev">
+
+    <a href="https://www.cnblogs.com/gnuemacs/p/14172600.html" class="p_n_p_prefix">« </a> 上一篇：    <a href="https://www.cnblogs.com/gnuemacs/p/14172600.html" data-featured-image="" title="发布于 2020-12-22 13:56">补码的本质</a>
+    <br>
+    <a href="https://www.cnblogs.com/gnuemacs/p/14311120.html" class="p_n_p_prefix">» </a> 下一篇：    <a href="https://www.cnblogs.com/gnuemacs/p/14311120.html" data-featured-image="" title="发布于 2021-01-21 23:25">Linux Kernel信号处理机制源码分析</a>
+
+</div>
+</div>
+        </div>
+	
+        <div class="postfoot">
+            posted on 
+<span id="post-date" data-last-update-days="0.00625" data-date-updated="2021-01-16 20:11">2021-01-16 20:02</span>&nbsp;
+<a href="https://www.cnblogs.com/gnuemacs">gnuemacs</a>&nbsp;
+阅读(<span id="post_view_count">4232</span>)&nbsp;
+评论(<span id="post_comment_count">2</span>)&nbsp;
+&nbsp;
+<a href="javascript:void(0)" onclick="AddToWz(14287120);return false;">收藏</a>&nbsp;
+<a href="javascript:void(0)" onclick="reportManager.report({ currentUserId: '', targetType: 'blogPost', targetId: '14287120', targetLink: 'https://www.cnblogs.com/gnuemacs/p/14287120.html', title: 'SeaBIOS实现简单分析' })">举报</a>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    var cb_entryId = 14287120, cb_entryCreatedDate = '2021-01-16 20:02', cb_postType = 1, cb_postTitle = 'SeaBIOS实现简单分析';
+    var allowComments = true, cb_blogId = 617500, cb_blogApp = 'gnuemacs', cb_blogUserGuid = '27ac77ee-f895-4298-1120-08d82a40bef5';
+    mermaidRender.render()
+    markdown_highlight()
+    zoomManager.apply("#cnblogs_post_body img:not(.code_img_closed):not(.code_img_opened)");    
+</script>
+<a id="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav">
+        <div class="comment-nav-right">
+            <span id="span_refresh_tips"></span><a href="#" onclick="return RefreshPage();">刷新页面</a><a href="#top">返回顶部</a>
+        </div>
+    </div>
+    <div id="comment_form_container"><div class="login_tips">
+    登录后才能查看或发表评论，立即 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return account.login('!comments');">登录</a> 或者
+    <a href="https://www.cnblogs.com/">逛逛</a> 博客园首页
+</div>
+</div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+        <div id="cnblogs_ch"><a href="https://www.cnblogs.com/cmt/p/19241983" target="_blank" onclick="countCreativeClicks('CH-harmonyos-dev')">【推荐】注册成为HarmonyOS开发者，支持博客园HarmonyOS社区建设</a><br><a href="https://www.juhe.cn/activity/detail/dataset?s=dataset-cnblog" target="_blank" onclick="countCreativeClicks('CH-聚合数据')">【推荐】聚合数据「数据启元计划」，200万奖金池征集高质量AI数据集</a><br><a href="https://ais.cn/u/VZZZJj" target="_blank" onclick="countCreativeClicks('CH-艾思科蓝')">【推荐】科研领域的连接者艾思科蓝，一站式科研学术服务数字化平台</a><br><a href="https://www.cnblogs.com/cmt/p/19165152" target="_blank" onclick="countCreativeClicks('CH-Qoder')">【推荐】诚邀您体验阿里巴巴推出的新一代 Agentic 编程平台 Qoder</a><br><a href="https://developer.huawei.com/consumer/cn/training/classDetail/d6bfe940eba3442f8ddf79e91eea0a71?type=1?ha_source=hmosclass-bokeyuan&amp;ha_sourceId=89000444" target="_blank" onclick="countCreativeClicks('CH-鸿蒙认证')">【推荐】鸿蒙应用开发者认证：学鸿蒙、考认证，跻身“抢手开发者”</a><br></div>
+    <div id="opt_under_post"></div>
+        <div id="blog_c1" class="under-post-card below-post-card">
+            <a href="https://www.trae.com.cn/?utm_source=advertising&amp;utm_medium=cnblogs_ug_cpa&amp;utm_term=hw_trae_cnblogs" rel="nofollow" target="_blank" onclick="countCreativeClicks('C1-字节-trae')">
+                <img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/35695-20251201125434258-461912837.webp" onload="countCreativeImpressions('C1-字节-trae')" alt="" style="width:300px!important;height:250px!important;min-width:300px!important;max-width:300px!important;">
+                <span id="c1_impression" style="display:none"></span>
+            </a>
+        </div>
+    <div id="under_post_card1"><div class="under-post-card below-post-card">
+<header>编辑推荐：</header>
+<ul>
+    <li><a href="https://www.cnblogs.com/xdesigner/p/19300178" target="_blank">如何将WinForm.NET代码迁移到Blazor WASM平台上</a></li>
+    <li><a href="https://www.cnblogs.com/jiujuan/p/19291044" target="_blank">技术管理：搭建团队研发管理体系的一个框架概述 </a></li>
+    <li><a href="https://www.cnblogs.com/jyzhao/p/19275222/yi-wen-gao-dong-llm-de-transformer-kan-wan-neng-he" target="_blank">一文搞懂 LLM 的 Transformer！看完能和别人吹一年</a></li>
+    <li><a href="https://www.cnblogs.com/charlee44/p/19245062" target="_blank">C++信创适配踩坑记</a></li>
+    <li><a href="https://www.cnblogs.com/hez2010/p/19261972/turning-csharp-type-system-into-a-query-engine" target="_blank">TypedSql：在 C# 类型系统上实现一个 SQL 查询引擎 </a></li>
+</ul>
+</div></div>
+    <div id="related_posts_card"></div>
+    <div id="under_post_card2"><div class="under-post-card below-post-card">
+    <header>鸿蒙专区：</header>
+    <ul>
+        <li><a href="https://harmonyos.cnblogs.com/p/22932" target="_blank">CodeGenie 基于图片生成鸿蒙应用UI代码</a></li>
+        <li><a href="https://harmonyos.cnblogs.com/p/24011" target="_blank">生态市场全新升级，助力鸿蒙应用高效开发</a></li>
+        <li><a href="https://harmonyos.cnblogs.com/p/23983" target="_blank">鸿蒙新闻行业解决方案助力行业应用体验变革</a></li>
+        <li><a href="https://harmonyos.cnblogs.com/p/22925" target="_blank">揭秘长相思App如何在鸿蒙打造沉浸式阅读体验</a></li>
+        <li><a href="https://harmonyos.cnblogs.com/p/22964" target="_blank">独立开发者，冲在「改变世界」第一线</a></li>        
+    </ul>
+</div>
+</div>
+    <div id="HistoryToday" class="under-post-card below-post-card"></div>
+    <script type="text/javascript">
+        var commentManager = new blogCommentManager();
+        commentManager.renderComments(0);
+        fixPostBody();
+        window.footnoteTipManager.generateFootnoteTips();
+
+            window.tocManager.displayDisableTocTips = false;
+            window.tocManager.generateToc();
+            
+            setTimeout(function() { countViews(cb_blogId, cb_entryId); }, 50);
+            
+            deliverT2();
+            deliverC1C2();
+            loadNewsAndKb();
+            
+            LoadPostCategoriesTags(cb_blogId, cb_entryId);
+            
+            LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+            GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+            loadOptUnderPost();
+            GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+                </script>
+</div>
+
+
+
+</td></tr>
+</tbody></table>
+<p id="footer">
+    <a href="https://www.cnblogs.com/" id="footer_site_link" class="footer-brand">博客园</a>
+    <span class="footer-copyright"> &nbsp;©&nbsp; 2004-2025</span>
+<br><span class="footer-icp">
+    <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=33010602011771"><img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/ghs.png">浙公网安备 33010602011771号</a>
+    <a href="https://beian.miit.gov.cn/" target="_blank">浙ICP备2021040463号-3</a>
+</span>
+
+</p>
+
+
+
+
+
+    
+
+    <input type="hidden" id="antiforgery_token" value="CfDJ8CE1tT_puDpHgc1zrpsLVP-wjvWy3mqa66d9lIUsXEZLG13ZqLqOZSVQ0L1eNgIS22Jo_MveeoeMjON1BlgUqW1oXKi0O7Aw3jivn1_kdjWuwQFj5zuo4CLywZK1Mje6P00zb_P3YCqzqKp_WzPptM8">
+    <script async="" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/js"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-M95P3TTWJZ');
+</script>
+<script defer="defer" src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/hm.js"></script>
+
+
+<div style="z-index: 998; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; flex-direction: column; align-items: center; justify-content: center">
+<div style="background: #fff;padding: 30px; margin: 30px; border-radius: 16px;">
+  <div style="width: 200px; height: 200px; background: rgba(255, 255, 255, 0.8); position: absolute; top: -100px; right: -100px; border-radius: 100px"></div>
+  <div style="text-align: center; font-size: 18px; margin-bottom: 10px;">点击右上角即可分享</div>
+  <img src="SeaBIOS%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90%20-%20gnuemacs%20-%20%E5%8D%9A%E5%AE%A2%E5%9B%AD_files/35695-20230906145857937-1471873834.gif" alt="微信分享提示">
+</div>   
+    </div><button class="charm-bar-item charm-bar-handle hidden" type="button" title="显示工具栏"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="logo">
+  <style>
+    .main {
+      fill: #FFF;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .main {
+        fill: #59E8EB;
+      }
+    }
+  </style>
+  <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+    <g transform="translate(-240.000000, -192.000000)">
+      <g id="VIP_3_line" transform="translate(240.000000, 192.000000)">
+        <path d="M24,0 L24,24 L0,24 L0,0 L24,0 Z M12.5934901,23.257841 L12.5819402,23.2595131 L12.5108777,23.2950439 L12.4918791,23.2987469 L12.4918791,23.2987469 L12.4767152,23.2950439 L12.4056548,23.2595131 C12.3958229,23.2563662 12.3870493,23.2590235 12.3821421,23.2649074 L12.3780323,23.275831 L12.360941,23.7031097 L12.3658947,23.7234994 L12.3769048,23.7357139 L12.4804777,23.8096931 L12.4953491,23.8136134 L12.4953491,23.8136134 L12.5071152,23.8096931 L12.6106902,23.7357139 L12.6232938,23.7196733 L12.6232938,23.7196733 L12.6266527,23.7031097 L12.609561,23.275831 C12.6075724,23.2657013 12.6010112,23.2592993 12.5934901,23.257841 L12.5934901,23.257841 Z M12.8583906,23.1452862 L12.8445485,23.1473072 L12.6598443,23.2396597 L12.6498822,23.2499052 L12.6498822,23.2499052 L12.6471943,23.2611114 L12.6650943,23.6906389 L12.6699349,23.7034178 L12.6699349,23.7034178 L12.678386,23.7104931 L12.8793402,23.8032389 C12.8914285,23.8068999 12.9022333,23.8029875 12.9078286,23.7952264 L12.9118235,23.7811639 L12.8776777,23.1665331 C12.8752882,23.1545897 12.8674102,23.1470016 12.8583906,23.1452862 L12.8583906,23.1452862 Z M12.1430473,23.1473072 C12.1332178,23.1423925 12.1221763,23.1452606 12.1156365,23.1525954 L12.1099173,23.1665331 L12.0757714,23.7811639 C12.0751323,23.7926639 12.0828099,23.8018602 12.0926481,23.8045676 L12.108256,23.8032389 L12.3092106,23.7104931 L12.3186497,23.7024347 L12.3186497,23.7024347 L12.3225043,23.6906389 L12.340401,23.2611114 L12.337245,23.2485176 L12.337245,23.2485176 L12.3277531,23.2396597 L12.1430473,23.1473072 Z" id="MingCute" fill-rule="nonzero"></path>
+        <path class="main" d="M2.33789,4.86283 C1.86918,4.02957 2.47132,3 3.42736,3 L9.70837,3 C10.2488,3 10.7475,3.29076 11.0138,3.7611 L12.9999,7.26995 L14.986,3.7611 C15.2523,3.29076 15.7509,3 16.2914,3 L20.5724,3 C21.5285,3 22.1306,4.02957 21.6619,4.86282 L13.0894,20.1029 C12.6115,20.9525 11.3883,20.9525 10.9104,20.1029 L2.33789,4.86283 Z M4.70974,5 L11.9999,17.9603 L19.29,5 L16.5829,5 L12.9999,11.3301 L9.41685,5 L4.70974,5 Z"></path>
+      </g>
+    </g>
+  </g>
+</svg> </button><div class="charm-bar-wrapper"><div class="charm-bar-main"><div class="charm-bar-panel inactive hidden"></div><div class="charm-bar"><a class="charm-bar-item charm-bar-item-link" target="_blank" title="" href="https://www.cnblogs.com/cmt/p/19241983"><span style="font-size: 22px; font-weight: 500; margin-left: 5px; letter-spacing: 2px;">注册成为鸿蒙开发者</span></a><button class="charm-bar-item" type="button" title="隐藏工具栏"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+</svg>
+</button></div></div></div></body></html>
