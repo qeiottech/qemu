@@ -1,7 +1,15 @@
 #!/bin/bash
+# URL: https://wiki.qemu.org/Features/Q35
+wget https://wiki.qemu.org/images/c/c6/QEMU-PC.png
+
+# i440fx
+# URL: https://www.qemu.org/docs/master/system/i386/pc.html
+# URL: https://en.wikipedia.org/wiki/Intel_440FX
+# URL: https://www.intel.com/design/archives/chipsets/440/index.htm
+
 # URL: https://wiki.qemu.org/Documentation/HardwareManuals
 wget https://www.intel.sg/content/dam/doc/datasheet/io-controller-hub-9-datasheet.pdf
-# UART 16650D	serial.c	National.com	File:PC16550D.pdf
+# UART 16650D   serial.c        National.com    File:PC16550D.pdf
 wget https://wiki.qemu.org/images/1/18/PC16550D.pdf
 
 # INTEL 440FX PCISET 82441FX PCI AND MEMORY CONTROLLER (PMC) AND 82442FX DATA BUS ACCELERATOR (DBX)
