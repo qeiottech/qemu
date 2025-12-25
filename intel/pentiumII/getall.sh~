@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# pentiumII_user_manual.pdf
+wget https://www.lpthe.jussieu.fr/~talon/pentiumII.pdf
+# 
