@@ -12,6 +12,9 @@ make V=1 2>&1 | tee make_V.log
 # pci_rom_and_pci_ids vgabios-stdvga.bin: ROM ID 1234:1111 | PCI ID 1234:1111
 # pci_rom_and_pci_ids efi-e1000.rom: ROM ID 8086:100e | PCI ID 8086:100e
 
+# compile_commands.json
+bear -- make
+
 # qemu
 cp $QEMU_SOURCE_DIR/roms/config.seabios .config
 make olddefconfig
