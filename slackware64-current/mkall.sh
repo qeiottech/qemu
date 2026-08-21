@@ -27,3 +27,6 @@ qemu-system-x86_64 -m 2048 -drive file=slackware64-current.img,index=0,media=dis
 
 # URL: slackware64-current/usb-and-pxe-installers/README_PXE.TXT
 ../qemu/build/qemu-system-x86_64 -enable-kvm -cpu host -m 2048 -drive file=./slackware64-current.img,index=0,media=disk,format=raw -nic user,tftp=/tftpboot/slackware64-current,bootfile=/pxelinux.0 -nographic
+
+# -nographic
+# URL: https://chat.deepseek.com/a/chat/s/ef33a563-996c-4ff1-991a-73b6a59f5eee
