@@ -1,0 +1,1 @@
+flymake-mode		toggle flymake mode on or off.
