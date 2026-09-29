@@ -1,1 +1,7 @@
+ansi-term		start a terminal-emulator in a new buffer.
+compile			compile the program including the current buffer.
+duplicate-line		duplicate the current line N times.
 flymake-mode		toggle flymake mode on or off.
+replace-string		replace occurrences of FROM-STRING with TO-STRING.
+shell			run an inferior shell.
+string-insert-rectangle	insert STRING on each line of region-rectangle, shifting text right.
