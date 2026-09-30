@@ -1,0 +1,24 @@
+Usage:
+  ./tests/qtest/i440fx-test [OPTION...]
+
+Help Options:
+  -h, --help                     Show help options
+
+Test Options:
+  --g-fatal-warnings             Make all warnings fatal
+  -l                             List test cases available in a test executable
+  -m {perf|slow|thorough|quick}  Execute tests according to mode
+  -m {undefined|no-undefined}    Execute tests according to mode
+  -p TESTPATH                    Only start test cases matching TESTPATH
+  -s TESTPATH                    Skip all tests matching TESTPATH
+  [-r | --run-prefix] PREFIX     Only start test cases (or suites) matching PREFIX (incompatible with -p).
+                                 Unlike the -p option (which only goes one level deep), this option would 
+                                 run all tests path that have PREFIX at the beginning of their name.
+                                 Note that the prefix used should be a valid test path (and not a simple prefix).
+  [-x | --skip-prefix] PREFIX    Skip all tests matching PREFIX (incompatible with -s)
+                                 Unlike the -s option (which only skips the exact TESTPATH), this option will 
+                                 skip all the tests that begins with PREFIX).
+  --seed=SEEDSTRING              Start tests with random seed SEEDSTRING
+  --debug-log                    debug test logging output
+  -q, --quiet                    Run tests quietly
+  --verbose                      Run tests verbosely
