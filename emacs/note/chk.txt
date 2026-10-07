@@ -3,6 +3,7 @@ delete-other-windows		C-x 1
 describe-command		C-h x
 describe-function		C-h f
 describe-key			C-h k
+execute-extended-command	M-x
 find-file			C-x C-f
 forward-sexp			C-M-f			// sexp: symbolic expression
 isearch-backward		C-r			// i: incremental

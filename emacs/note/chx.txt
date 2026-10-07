@@ -1,1 +1,3 @@
+change-log-mode		major mode for editing change logs.
+eglot			start LSP server for PROJECT's buffers under MANAGED-MAJOR-MODES.
 flymake-mode		toggle flymake mode on or off.

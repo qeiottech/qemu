@@ -1,0 +1,16 @@
+Thread 1 "qemu-system-x86" hit Breakpoint 1, pc_init1 (machine=0x55555784b800, pci_type=0x55555631\
+030d "i440FX") at ../hw/i386/pc_piix.c:103
+103     {
+(gdb) bt
+#0  pc_init1 (machine=0x55555784b800, pci_type=0x55555631030d "i440FX") at ../hw/i386/pc_piix.c:10\
+3
+#1  0x0000555555dfd1b1 in pc_i440fx_init (machine=0x55555784b800) at ../hw/i386/pc_piix.c:403
+#2  0x0000555555dfd3c5 in pc_i440fx_machine_10_2_init (machine=0x55555784b800) at ../hw/i386/pc_pi\
+ix.c:446
+#3  0x000055555598abce in machine_run_board_init (machine=0x55555784b800, mem_path=0x0, errp=0x7ff\
+fffffda20) at ../hw/core/machine.c:1745
+#4  0x0000555555c01a2f in qemu_init_board () at ../system/vl.c:2716
+#5  0x0000555555c01db5 in qmp_x_exit_preconfig (errp=0x555557506700 <error_fatal>) at ../system/vl\
+.c:2810
+#6  0x0000555555c04771 in qemu_init (argc=1, argv=0x7fffffffdd68) at ../system/vl.c:3850
+#7  0x000055555608d4cd in main (argc=1, argv=0x7fffffffdd68) at ../system/main.c:71
