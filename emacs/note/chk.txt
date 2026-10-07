@@ -1,9 +1,17 @@
 backward-sexp			C-M-b			// sexp: symbolic expression
+beginning-of-buffer		M-<
+delete-char			C-d
 delete-other-windows		C-x 1
+delete-rectangle		C-x r d
 describe-command		C-h x
 describe-function		C-h f
 describe-key			C-h k
+<<<<<<< HEAD
 execute-extended-command	M-x
+=======
+end-of_buffer			M->
+eval-expression			M-:
+>>>>>>> 1792be17a61284c45fe333314dc5fe94ad0960de
 find-file			C-x C-f
 forward-sexp			C-M-f			// sexp: symbolic expression
 isearch-backward		C-r			// i: incremental
@@ -11,11 +19,20 @@ isearch-repeat-forward		C-s			// i: incremental
 keyboard-quit			C-g
 kill-buffer			C-x k
 kill-line			C-k
+kill-region			C-w
 kill-ring-save			M-w
+list-buffers			C-x C-b
 move-beginning-of-line		C-a
 move-end-of-line		C-e
+next-line			C-n
+open-line			C-o
 other-window			C-x o
+previous-line			C-p
+query-replace			M-%
 recenter-top-bottom		C-l
+rectangle-mark-mode		C-x SPC
 save-buffer			C-x C-s
+save-buffers-kill-terminal	C-x C-c
+set-mark-command		C-SPC
 switch-to-buffer		C-x b
 undo				C-x u
