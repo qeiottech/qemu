@@ -7,17 +7,11 @@ delete-rectangle		C-x r d
 describe-command		C-h x
 describe-function		C-h f
 describe-key			C-h k
-<<<<<<< HEAD
 downcase-region			C-x C-l
 downcase-word			M-l
-=======
-<<<<<<< HEAD
 execute-extended-command	M-x
-=======
->>>>>>> 6357c0b8cef61ccbcd4267e30d4d358e5358646a
 end-of_buffer			M->
 eval-expression			M-:
->>>>>>> 1792be17a61284c45fe333314dc5fe94ad0960de
 find-file			C-x C-f
 forward-sexp			C-M-f			// sexp: symbolic expression
 isearch-backward		C-r			// i: incremental
