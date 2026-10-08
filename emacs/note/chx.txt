@@ -1,6 +1,11 @@
+<<<<<<< HEAD
+change-log-mode		major mode for editing change logs.
+eglot			start LSP server for PROJECT's buffers under MANAGED-MAJOR-MODES.
+=======
 ansi-term		start a terminal-emulator in a new buffer.
 compile			compile the program including the current buffer.
 duplicate-line		duplicate the current line N times.
+>>>>>>> 1792be17a61284c45fe333314dc5fe94ad0960de
 flymake-mode		toggle flymake mode on or off.
 gdb			run gdb passing it COMMAND_LINE as arguments.
 replace-string		replace occurrences of FROM-STRING with TO-STRING.

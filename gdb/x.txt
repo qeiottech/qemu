@@ -1,0 +1,15 @@
+(gdb) bt
+#0  i440fx_pcihost_initfn (obj=0x555557998120) at ../hw/pci-host/i440fx.c:224
+#1  0x0000555555f4775a in object_init_with_type (obj=0x555557998120, ti=0x555557591b80) at ../qom/object.c:428
+#2  0x0000555555f47d00 in object_initialize_with_type (obj=0x555557998120, size=1776, type=0x555557591b80) at ../qom/object.c:570
+#3  0x0000555555f4848a in object_new_with_type (type=0x555557591b80) at ../qom/object.c:774
+#4  0x0000555555f484f8 in object_new (typename=0x5555563101b5 "i440FX-pcihost") at ../qom/object.c:789
+#5  0x0000555555f41e2f in qdev_new (name=0x5555563101b5 "i440FX-pcihost") at ../hw/core/qdev.c:149
+#6  0x0000555555dfc95d in pc_init1 (machine=0x55555784b800, pci_type=0x55555631030d "i440FX") at ../hw/i386/pc_piix.c:196
+#7  0x0000555555dfd1b1 in pc_i440fx_init (machine=0x55555784b800) at ../hw/i386/pc_piix.c:403
+#8  0x0000555555dfd3c5 in pc_i440fx_machine_10_2_init (machine=0x55555784b800) at ../hw/i386/pc_piix.c:446
+#9  0x000055555598abce in machine_run_board_init (machine=0x55555784b800, mem_path=0x0, errp=0x7fffffffda20) at ../hw/core/machine.c:1745
+#10 0x0000555555c01a2f in qemu_init_board () at ../system/vl.c:2716
+#11 0x0000555555c01db5 in qmp_x_exit_preconfig (errp=0x555557506700 <error_fatal>) at ../system/vl.c:2810
+#12 0x0000555555c04771 in qemu_init (argc=1, argv=0x7fffffffdd68) at ../system/vl.c:3850
+#13 0x000055555608d4cd in main (argc=1, argv=0x7fffffffdd68) at ../system/main.c:71
