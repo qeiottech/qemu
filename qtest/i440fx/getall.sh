@@ -17,4 +17,5 @@ TAP version 13
 # End of i440fx tests
 # End of x86_64 tests
 
+$ QTEST_QEMU_BINARY=./qemu-system-x86_64 ./tests/qtest/i440fx-test -p /x86_64/i440fx/defaults --verbose
 $ QTEST_QEMU_BINARY=./qemu-system-x86_64 ./tests/qtest/i440fx-test -p /x86_64/i440fx/pam

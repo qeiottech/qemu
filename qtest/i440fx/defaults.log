@@ -1,0 +1,10 @@
+$ QTEST_QEMU_BINARY=./qemu-system-x86_64 ./tests/qtest/i440fx-test -p /x86_64/i440fx/defaults --verbose
+TAP version 13
+# random seed: R02S09c745abd4492b14f1999a418f039663
+# Start of x86_64 tests
+# Start of i440fx tests
+# starting QEMU: exec ./qemu-system-x86_64 -qtest unix:/tmp/qtest-31259.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-31259.qmp,id=char0 -object monitor-qmp,id=qmp0,chardev=char0 -display none -audio none -run-with exit-with-parent=on -machine pc -smp 1  -accel qtest
+ok 1 /x86_64/i440fx/defaults
+# End of i440fx tests
+# End of x86_64 tests
+1..1

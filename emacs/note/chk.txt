@@ -1,11 +1,14 @@
 backward-sexp			C-M-b			// sexp: symbolic expression
 beginning-of-buffer		M-<
+capitalize-word			M-c
 delete-char			C-d
 delete-other-windows		C-x 1
 delete-rectangle		C-x r d
 describe-command		C-h x
 describe-function		C-h f
 describe-key			C-h k
+downcase-region			C-x C-l
+downcase-word			M-l
 end-of_buffer			M->
 eval-expression			M-:
 find-file			C-x C-f
@@ -32,3 +35,5 @@ save-buffers-kill-terminal	C-x C-c
 set-mark-command		C-SPC
 switch-to-buffer		C-x b
 undo				C-x u
+upcase-region			C-x C-u
+upcase-word			M-u
