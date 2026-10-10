@@ -35,6 +35,8 @@ save-buffer			C-x C-s
 save-buffers-kill-terminal	C-x C-c
 set-mark-command		C-SPC
 switch-to-buffer		C-x b
+tabulated-list-narrow-current-column	{
+tabulated-list-widen-current-column	}
 undo				C-x u
 upcase-region			C-x C-u
 upcase-word			M-u

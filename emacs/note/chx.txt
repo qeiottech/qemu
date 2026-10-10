@@ -1,10 +1,11 @@
-change-log-mode		major mode for editing change logs.
-eglot			start LSP server for PROJECT's buffers under MANAGED-MAJOR-MODES.
 ansi-term		start a terminal-emulator in a new buffer.
+change-log-mode		major mode for editing change logs.
 compile			compile the program including the current buffer.
 duplicate-line		duplicate the current line N times.
+eglot			start LSP server for PROJECT's buffers under MANAGED-MAJOR-MODES.
 flymake-mode		toggle flymake mode on or off.
 gdb			run gdb passing it COMMAND_LINE as arguments.
+memory-report		generate a report of how emacs is using memory.
 replace-string		replace occurrences of FROM-STRING with TO-STRING.
 shell			run an inferior shell.
 string-insert-rectangle	insert STRING on each line of region-rectangle, shifting text right.
