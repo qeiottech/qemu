@@ -5,6 +5,7 @@ duplicate-line		duplicate the current line N times.
 eglot			start LSP server for PROJECT's buffers under MANAGED-MAJOR-MODES.
 flymake-mode		toggle flymake mode on or off.
 gdb			run gdb passing it COMMAND_LINE as arguments.
+load-theme		load theme: modus-operandi / modus-vivendi
 memory-report		generate a report of how emacs is using memory.
 replace-string		replace occurrences of FROM-STRING with TO-STRING.
 shell			run an inferior shell.

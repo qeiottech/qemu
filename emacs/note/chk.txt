@@ -22,6 +22,7 @@ kill-line			C-k
 kill-region			C-w
 kill-ring-save			M-w
 list-buffers			C-x C-b
+magit-status			C-x g
 move-beginning-of-line		C-a
 move-end-of-line		C-e
 next-line			C-n
@@ -37,6 +38,7 @@ set-mark-command		C-SPC
 switch-to-buffer		C-x b
 tabulated-list-narrow-current-column	{
 tabulated-list-widen-current-column	}
+text-scale-adjust		C-x C-=
 undo				C-x u
 upcase-region			C-x C-u
 upcase-word			M-u

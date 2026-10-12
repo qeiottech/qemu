@@ -2,7 +2,10 @@
 ./autogen.sh
 # sudo apt install texinfo 
 # sudo apt install libgnutls28-dev libgccjit-14-dev
-./configure --without-x
+# ./configure --without-x
+# sudo apt install libxaw7-dev
+# sudo apt install libgif-dev libtiff-dev
+./configure
 # sudo apt install pipx
 # pipx install compiledb
 # compiledb -n make
