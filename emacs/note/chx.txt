@@ -3,9 +3,11 @@ change-log-mode		major mode for editing change logs.
 compile			compile the program including the current buffer.
 duplicate-line		duplicate the current line N times.
 eglot			start LSP server for PROJECT's buffers under MANAGED-MAJOR-MODES.
+eglot-manual		read eglot's manual
 flymake-mode		toggle flymake mode on or off.
 gdb			run gdb passing it COMMAND_LINE as arguments.
 load-theme		load theme: modus-operandi / modus-vivendi
+magit-info		visit the magit manual.
 memory-report		generate a report of how emacs is using memory.
 replace-string		replace occurrences of FROM-STRING with TO-STRING.
 shell			run an inferior shell.
