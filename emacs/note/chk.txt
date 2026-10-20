@@ -1,9 +1,11 @@
 backward-sexp			C-M-b			// sexp: symbolic expression
+balance-windows			C-x +
 beginning-of-buffer		M-<
 capitalize-word			M-c
 delete-char			C-d
 delete-other-windows		C-x 1
 delete-rectangle		C-x r d
+delete-window			C-x 0
 describe-command		C-h x
 describe-function		C-h f
 describe-key			C-h k
@@ -11,6 +13,8 @@ downcase-region			C-x C-l
 downcase-word			M-l
 execute-extended-command	M-x
 end-of_buffer			M->
+enlarge-window			C-x ^
+enlarge-window-horizontally	C-x }
 eval-expression			M-:
 find-file			C-x C-f
 forward-sexp			C-M-f			// sexp: symbolic expression
@@ -35,6 +39,10 @@ rectangle-mark-mode		C-x SPC
 save-buffer			C-x C-s
 save-buffers-kill-terminal	C-x C-c
 set-mark-command		C-SPC
+shrink-window-horizontally	C-x {
+shrink-window-if-larger-than-buffer C-x -
+split-window-below		C-x 2
+split-window-right		C-x 3
 switch-to-buffer		C-x b
 tabulated-list-narrow-current-column	{
 tabulated-list-widen-current-column	}
