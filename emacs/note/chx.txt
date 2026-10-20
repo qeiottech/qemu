@@ -12,3 +12,4 @@ memory-report		generate a report of how emacs is using memory.
 replace-string		replace occurrences of FROM-STRING with TO-STRING.
 shell			run an inferior shell.
 string-insert-rectangle	insert STRING on each line of region-rectangle, shifting text right.
+toggle-frame-fullscreen	F11
