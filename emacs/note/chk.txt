@@ -36,6 +36,7 @@ previous-line			C-p
 query-replace			M-%
 recenter-top-bottom		C-l
 rectangle-mark-mode		C-x SPC
+repeat				C-x z
 save-buffer			C-x C-s
 save-buffers-kill-terminal	C-x C-c
 set-mark-command		C-SPC
