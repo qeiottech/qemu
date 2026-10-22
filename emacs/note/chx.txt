@@ -10,6 +10,10 @@ kill-emacs		exit the emacs job and kill it.
 load-theme		load theme: modus-operandi / modus-vivendi
 magit-info		visit the magit manual.
 memory-report		generate a report of how emacs is using memory.
+menu-bar-mode		toggle display of a menu bar on each frace.
 replace-string		replace occurrences of FROM-STRING with TO-STRING.
+scroll-bar-mode		toggle vertical scroll bars on all frames.
 shell			run an inferior shell.
 string-insert-rectangle	insert STRING on each line of region-rectangle, shifting text right.
+toggle-frame-fullscreen	F11
+tool-bar-mode		toggle the tool bar in all graphical frames.
