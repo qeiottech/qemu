@@ -18,6 +18,7 @@ enlarge-window-horizontally	C-x }
 eval-expression			M-:
 find-file			C-x C-f
 forward-sexp			C-M-f			// sexp: symbolic expression
+global-text-scale-adjust	C-x C-M-=
 isearch-backward		C-r			// i: incremental
 isearch-repeat-forward		C-s			// i: incremental
 keyboard-quit			C-g

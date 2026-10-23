@@ -11,6 +11,9 @@ load-theme		load theme: modus-operandi / modus-vivendi
 magit-info		visit the magit manual.
 memory-report		generate a report of how emacs is using memory.
 menu-bar-mode		toggle display of a menu bar on each frace.
+package-install		install the package PKG.
+package-list-packages	display a list of packages.
+package-refresh-contents       download descriptions of all configured ELPA packages
 replace-string		replace occurrences of FROM-STRING with TO-STRING.
 scroll-bar-mode		toggle vertical scroll bars on all frames.
 shell			run an inferior shell.
