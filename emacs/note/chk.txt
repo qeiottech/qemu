@@ -2,6 +2,8 @@ backward-sexp			C-M-b			// sexp: symbolic expression
 balance-windows			C-x +
 beginning-of-buffer		M-<
 capitalize-word			M-c
+comint-next-input		M-n
+comint-previous-input		M-p
 delete-char			C-d
 delete-other-windows		C-x 1
 delete-rectangle		C-x r d
@@ -12,13 +14,12 @@ describe-key			C-h k
 downcase-region			C-x C-l
 downcase-word			M-l
 execute-extended-command	M-x
-end-of_buffer			M->
+end-of-buffer			M->
 enlarge-window			C-x ^
 enlarge-window-horizontally	C-x }
 eval-expression			M-:
 find-file			C-x C-f
 forward-sexp			C-M-f			// sexp: symbolic expression
-global-text-scale-adjust	C-x C-M-=
 isearch-backward		C-r			// i: incremental
 isearch-repeat-forward		C-s			// i: incremental
 keyboard-quit			C-g
@@ -35,6 +36,7 @@ open-line			C-o
 other-window			C-x o
 previous-line			C-p
 query-replace			M-%
+quoted-insert			C-q
 recenter-top-bottom		C-l
 rectangle-mark-mode		C-x SPC
 repeat				C-x z
