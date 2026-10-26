@@ -6,6 +6,7 @@ eglot			start LSP server for PROJECT's buffers under MANAGED-MAJOR-MODES.
 eglot-manual		read eglot's manual
 flymake-mode		toggle flymake mode on or off.
 gdb			run gdb passing it COMMAND_LINE as arguments.
+list-processes		display a list of all processes that are emacs sub-processes.
 load-theme		load theme: modus-operandi / modus-vivendi
 magit-info		visit the magit manual.
 memory-report		generate a report of how emacs is using memory.
