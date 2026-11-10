@@ -1,0 +1,8 @@
+* prepare
+#+begin_src bash
+  # for pdflatex
+  sudo apt install texlive-full
+  # from org to markdown
+  sudo apt install pandoc
+  pandoc -f org -t markdown org.org -o org.md
+#+end_src

@@ -11,6 +11,7 @@ delete-window			C-x 0
 describe-command		C-h x
 describe-function		C-h f
 describe-key			C-h k
+describe-mode			C-h m
 downcase-region			C-x C-l
 downcase-word			M-l
 execute-extended-command	M-x
@@ -29,6 +30,7 @@ kill-region			C-w
 kill-ring-save			M-w
 list-buffers			C-x C-b
 magit-status			C-x g
+mark-whole-buffer		C-x h
 move-beginning-of-line		C-a
 move-end-of-line		C-e
 next-line			C-n
@@ -39,6 +41,7 @@ query-replace			M-%
 quoted-insert			C-q
 recenter-top-bottom		C-l
 rectangle-mark-mode		C-x SPC
+rename-buffer			C-x x r
 repeat				C-x z
 save-buffer			C-x C-s
 save-buffers-kill-terminal	C-x C-c
@@ -54,3 +57,4 @@ text-scale-adjust		C-x C-=
 undo				C-x u
 upcase-region			C-x C-u
 upcase-word			M-u
+where-is			C-h w

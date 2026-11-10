@@ -1,3 +1,4 @@
+ace-window		select a window.
 ansi-term		start a terminal-emulator in a new buffer.
 change-log-mode		major mode for editing change logs.
 compile			compile the program including the current buffer.
