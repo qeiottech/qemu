@@ -1,0 +1,57 @@
+% Created 2026-11-11 Wed 10:07
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\author{jaloo}
+\date{\today}
+\title{}
+\hypersetup{
+ pdfauthor={jaloo},
+ pdftitle={},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={},
+ pdflang={English}}
+\begin{document}
+
+\tableofcontents
+
+\section{prepare}
+\label{sec:org33323c2}
+\begin{verbatim}
+# for pdflatex
+sudo apt install texlive-full
+# from org to markdown
+sudo apt install pandoc
+pandoc -f org -t markdown org.org -o org.md
+\end{verbatim}
+\section{hotkey}
+\label{sec:org9c5ed1f}
+\begin{center}
+\begin{tabular}{lll}
+command & hotkey & comment\\
+\hline
+org-export-dispatch & C-c C-e & export dispatcher for org mode.\\
+org-metadown & M-<down> & move subtree down or move table row down.\\
+org-metaleft & M-<left> & promote heading, list item at point or move table column left.\\
+org-metaright & M-<right> & demote heading, list item at point or move table column right.\\
+org-metaup & M-<up> & move subtree up or move table row up.\\
+org-shiftmetadown & M-S-<down> & in a table, insert an empty row at the current line.\\
+org-shiftmetaleft & M-S-<left> & promote subtree or delete table column.\\
+org-shiftmetaright & M-S-<right> & demote subtree or insert table column.\\
+org-shiftmetaup & M-S-<up> & in a table, kill the current row.\\
+ &  & \\
+\end{tabular}
+\end{center}
+\end{document}

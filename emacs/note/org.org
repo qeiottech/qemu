@@ -6,3 +6,17 @@
   sudo apt install pandoc
   pandoc -f org -t markdown org.org -o org.md
 #+end_src
+
+* hotkey
+| command             | hotkey      | comment                                                        |
+|---------------------+-------------+----------------------------------------------------------------|
+| org-export-dispatch | C-c C-e     | export dispatcher for org mode.                                |
+| org-metadown        | M-<down>    | move subtree down or move table row down.                      |
+| org-metaleft        | M-<left>    | promote heading, list item at point or move table column left. |
+| org-metaright       | M-<right>   | demote heading, list item at point or move table column right. |
+| org-metaup          | M-<up>      | move subtree up or move table row up.                          |
+| org-shiftmetadown   | M-S-<down>  | in a table, insert an empty row at the current line.           |
+| org-shiftmetaleft   | M-S-<left>  | promote subtree or delete table column.                        |
+| org-shiftmetaright  | M-S-<right> | demote subtree or insert table column.                         |
+| org-shiftmetaup     | M-S-<up>    | in a table, kill the current row.                              |
+|                     |             |                                                                |
