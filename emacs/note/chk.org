@@ -28,7 +28,7 @@
 | keyboard-quit                        | C-g     |                           |
 | kill-buffer                          | C-x k   |                           |
 | kill-line                            | C-k     |                           |
-| kill-region                          | C-w     |                           |
+| kill-region                          | C-w     | w: wipe                   |
 | kill-ring-save                       | M-w     |                           |
 | list-buffers                         | C-x C-b |                           |
 | magit-status                         | C-x g   |                           |
