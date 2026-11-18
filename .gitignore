@@ -15,3 +15,6 @@
 /vmm/kvm/src/kvm-unit-tests/
 /vmm/kvm/src/kvmtool/
 /vmm/virt-manager/virt-manager/
+token.txt
+slackware64-current/slackware64-current.img
+emacs/src/emacs

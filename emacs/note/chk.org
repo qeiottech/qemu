@@ -6,6 +6,7 @@
 | capitalize-word                      | M-c     |                           |
 | comint-next-input                    | M-n     |                           |
 | comint-previous-input                | M-p     |                           |
+| comment-line                         | C-x C-; |                           |
 | delete-char                          | C-d     |                           |
 | delete-other-windows                 | C-x 1   |                           |
 | delete-rectangle                     | C-x r d |                           |
