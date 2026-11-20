@@ -1,3 +1,2 @@
 #!/bin/bash
-# git clone git://git.buildroot.net/buildroot
-git pull
+git clone https://gitlab.com/buildroot.org/buildroot.git

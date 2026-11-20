@@ -25,6 +25,7 @@
 | find-file                            | C-x C-f |                           |
 | forward-sexp                         | C-M-f   | sexp: symbolic expression |
 | isearch-backward                     | C-r     | i: incremental            |
+| isearch-forward-symbol-at-point      | M-s .   | i: incremental            |
 | isearch-repeat-forward               | C-s     | i: incremental            |
 | keyboard-quit                        | C-g     |                           |
 | kill-buffer                          | C-x k   |                           |
