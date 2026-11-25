@@ -11,15 +11,19 @@
 | command                       | hotkey      | comment                                                        |
 |-------------------------------+-------------+----------------------------------------------------------------|
 | org-ctrl-c-star               | C-c *       | compute table, or change heading status of lines.              |
+| org-cycle                     | TAB         | TAB-action and visibility cycling for Org mode.                |
 | org-edit-special              | C-c '       | call a special editor for the element at point.                |
 | org-export-dispatch           | C-c C-e     | export dispatcher for org mode.                                |
 | org-insert-structure-template | C-c C-,     | insert a block structure of the type #+begin_foo/#+end_foo.    |
 | org-metadown                  | M-<down>    | move subtree down or move table row down.                      |
 | org-metaleft                  | M-<left>    | promote heading, list item at point or move table column left. |
+| org-metareturn                | M-RET       | insert a new heading or wrap a region in a table.              |
 | org-metaright                 | M-<right>   | demote heading, list item at point or move table column right. |
 | org-metaup                    | M-<up>      | move subtree up or move table row up.                          |
+| org-open-line                 | C-o         | Insert a new row in tables, call 'open-line' elsewise.         |
 | org-shiftmetadown             | M-S-<down>  | in a table, insert an empty row at the current line.           |
 | org-shiftmetaleft             | M-S-<left>  | promote subtree or delete table column.                        |
 | org-shiftmetaright            | M-S-<right> | demote subtree or insert table column.                         |
 | org-shiftmetaup               | M-S-<up>    | in a table, kill the current row.                              |
+| org-shifttab                  | S-TAB       | global visibility cycling or move to previous table field.     |
 |                               |             |                                                                |
