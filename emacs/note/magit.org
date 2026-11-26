@@ -1,0 +1,14 @@
+| command        | hotkey                    |
+|----------------+---------------------------|
+| magit-dispatch | ?, h, C-c C-c and C-x M-g |
+|                |                           |
+
+* buffer: status
+| command | key |
+|---------+-----|
+| commit  | c   |
+| fetch   | f   |
+| merge   | m   |
+| pull    | F   |
+| push    | P   |
+| run     | !   |
