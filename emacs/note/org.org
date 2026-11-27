@@ -18,9 +18,9 @@
 | org-insert-structure-template | C-c C-,     | insert a block structure of the type #+begin_foo/#+end_foo.               |
 | org-metadown                  | M-<down>    | move subtree down or move table row down.                                 |
 | org-metaleft                  | M-<left>    | promote heading, list item at point or move table column left.            |
-| org-metareturn                | M-RET       | insert a new heading or wrap a region in a table.                         |
 | org-metaright                 | M-<right>   | demote heading, list item at point or move table column right.            |
 | org-metaup                    | M-<up>      | move subtree up or move table row up.                                     |
+| org-meta-return               | M-RET       | insert a new heading or wrap a region in a table.                         |
 | org-open-line                 | C-o         | Insert a new row in tables, call 'open-line' elsewise.                    |
 | org-shiftleft                 | S-<left>    | on a headline, switch to the previous TODO keyword.                       |
 | org-shiftmetadown             | M-S-<down>  | in a table, insert an empty row at the current line.                      |

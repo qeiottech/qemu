@@ -1,0 +1,7 @@
+# comint: command interpreter
+* hotkey
+| command             | hotkey  |
+|---------------------+---------|
+| comint-clear-buffer | C-c M-o |
+|                     |         |
+
